@@ -1,0 +1,100 @@
+name: cts_convenios
+
+services:
+
+  # ------------------------------------------------------------------------
+  # app-server: PHP 8.4-FPM preparado para Laravel 13 (API RESTful)
+  # ------------------------------------------------------------------------
+  app-server:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: cts_app_server
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+    # Sem `environment:` de propósito: o Laravel já lê DB_*/REDIS_* do seu
+    # próprio arquivo src/.env. Duplicar aqui como variável de ambiente do
+    # container tem um efeito colateral sério — vira uma env var real do
+    # SO, e o PHPUnit só sobrescreve env vars via <env> quando elas AINDA
+    # NÃO existem no processo (force="false" é o padrão). Resultado: os
+    # testes ignoravam o SQLite do phpunit.xml e rodavam contra o Postgres
+    # de desenvolvimento de verdade.
+    depends_on:
+      database:
+        condition: service_healthy
+      cache-workers:
+        condition: service_healthy
+    networks:
+      - cts_network
+
+  # ------------------------------------------------------------------------
+  # web-server: Nginx — proxy reverso para o app-server e entrega da SPA Vue
+  # ------------------------------------------------------------------------
+  web-server:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    container_name: cts_web_server
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - app-server
+    networks:
+      - cts_network
+
+  # ------------------------------------------------------------------------
+  # database: PostgreSQL 15 — dados transacionais multi-tenant
+  # ------------------------------------------------------------------------
+  database:
+    image: postgres:15-alpine
+    container_name: cts_database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT_EXPOSED}:5432"
+    volumes:
+      - cts_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cts_network
+
+  # ------------------------------------------------------------------------
+  # cache-workers: Redis — cache de dados + filas assíncronas (alertas)
+  # ------------------------------------------------------------------------
+  cache-workers:
+    image: redis:7-alpine
+    container_name: cts_cache_workers
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT_EXPOSED}:6379"
+    volumes:
+      - cts_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cts_network
+
+networks:
+  cts_network:
+    driver: bridge
+
+volumes:
+  cts_postgres_data:
+  cts_redis_data:
