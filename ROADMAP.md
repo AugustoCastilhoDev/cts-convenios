@@ -96,8 +96,14 @@
 1. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)** — base, login, Kanban, detalhe e formulário prontos; falta:
    - Dashboard com indicadores financeiros (saldo disponível já vem pronto da API).
    - Tela de repositório de arquivos (upload/download).
-2. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
-3. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
+2. **Painel do Administrador Interno** (antes de vender para a 2ª prefeitura; hoje isso só é possível por API/comandos):
+   - Cadastro/edição/desativação de prefeituras (a `TenantPolicy` já restringe ao admin; falta Controller de escrita — hoje só existe `GET /api/tenants`).
+   - Gestão de usuários por prefeitura (a API `/api/users` já existe; falta a tela) e criação do primeiro Gestor de uma prefeitura nova.
+   - Exclusão de convênio lançado por engano (a API `DELETE /api/convenios/{id}` já existe só para o admin; falta botão com confirmação).
+   - Consulta da trilha de auditoria (`audits`) por prefeitura/convênio.
+   - Trocar a própria senha (pendência conhecida: hoje o admin não consegue pela API).
+3. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
+4. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
 
 ## Armadilhas conhecidas (para não repetir)
 
