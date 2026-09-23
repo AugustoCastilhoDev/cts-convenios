@@ -1,6 +1,6 @@
 # Roadmap — CTS Convênios
 
-> Última atualização: 2026-09-23 (gestão de usuários)
+> Última atualização: 2026-09-23 (Motor de Alertas; sessão pausada)
 > Este arquivo existe para retomar o desenvolvimento sem perder contexto entre sessões. Sempre que uma etapa for concluída, mova-a para "Concluído" com a data.
 
 ## Stack e decisões de arquitetura já validadas
@@ -72,6 +72,7 @@
 - **Idempotência:** tabela `alertas_prazo` (única por convênio + tipo + data do prazo + marco). Agendador parado não perde alerta (sai no marco mais próximo); prazo alterado reinicia a régua; alerta obsoleto (prazo mudou/convênio finalizado antes do envio) é cancelado, não enviado; sem destinatários fica pendente e sai quando houver alguém.
 - **Destinatários:** Gestores e Fiscais ativos da prefeitura. Prefeitura inativa é ignorada. Vigência não alerta em "Prestação de Contas"; "Finalizado" nunca alerta.
 - **Histórico:** `GET /convenios/{convenio}/alertas` (somente leitura; quem vê o convênio vê os alertas).
+- **Fuso:** `APP_TIMEZONE` = `America/Sao_Paulo` (config/app.php): datas e horários de todo o sistema seguem Brasília. Timestamps antigos do banco de dev foram gravados em UTC (só afeta dados de teste).
 - **Docker:** novos serviços `queue-worker` e `scheduler` (mesma imagem `cts-convenios-app`). Depois de mudar um Job em dev: `docker compose restart queue-worker`.
 - **Segurança em dev:** `ALERTAS_REDIRECIONAR_PARA` (em `src/.env`) desvia TODOS os alertas para um e-mail só e marca o assunto com `[TESTE]` — os dados de teste têm e-mails fictícios e enviar para eles queima a reputação do domínio. **Em produção deve ficar vazio.**
 - 29 testes novos (77 no total) + teste real de ponta a ponta (worker enviou os 2 alertas, 2ª execução não duplicou).
@@ -79,8 +80,7 @@
 ## Pendências conhecidas (não esquecidas, só adiadas)
 
 - [ ] Administrador Interno não consegue trocar a própria senha pela API (só recriando via console); avaliar endpoint de "minha conta" quando o front-end existir.
-- [ ] Alertas por WhatsApp (gateway a definir) — só o canal de e-mail existe hoje.
-- [ ] Fuso horário: `APP_TIMEZONE` está em UTC; o Motor usa `America/Sao_Paulo` explícito, mas o accessor `Convenio::dias_para_vencimento` usa `now()` (UTC) e pode errar 1 dia à noite. Decidir se troca o `APP_TIMEZONE` (afeta como timestamps são gravados) ou ajusta o accessor.
+- [ ] Alertas por WhatsApp: decisão (2026-09-23) de usar só e-mail por enquanto, sem plataforma de WhatsApp contratada. Retomar quando houver gateway; o Motor já separa a geração do alerta (`AlertaPrazoService`) do envio (`EnviarAlertaPrazo`), então um novo canal entra como outro job/notificação.
 - [ ] E-mail em produção: hoje envia via Resend com domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev. Ao registrar o domínio do CTS: verificar no Resend, trocar `MAIL_FROM_ADDRESS`, DMARC em `p=quarantine` após estabilizar, e testar entrega em caixas institucionais (`.gov.br`, Outlook), pois o primeiro teste caiu em spam no Gmail (reputação de domínio novo + texto puro; SPF/DKIM/DMARC estavam corretos).
 
 ## Próximos passos (em ordem sugerida)
