@@ -109,6 +109,8 @@
 - **O SQLite dos testes não valida tipos de coluna** (ex.: gravar `24` numa coluna `uuid` passa). Mudanças que envolvam auditoria, chaves ou tipos precisam de um smoke test HTTP real contra o Postgres — foi assim que os 2 bugs de auditoria acima apareceram.
 - **`owen-it/laravel-auditing` não audita nada rodado via `artisan`/`tinker`/seeders** por padrão (`audit.console => false`) — isso é proposital do pacote, não bug. Só audita requisições HTTP reais.
 
+- **Cache do PHP em dev (opcache)**: no Windows a pasta compartilhada com o Docker é lenta e conferir os arquivos a cada requisição custava ~2 s por página. Hoje `opcache.revalidate_freq = 30` (em `docker/php/php.ini`): as requisições levam ~0,2 s, mas uma edição em PHP pode levar até 30 s para valer **nas chamadas HTTP** (o artisan/testes não são afetados). Para valer na hora: `docker compose exec app-server kill -USR2 1`. Em produção, usar `validate_timestamps = 0`.
+
 ## Comandos essenciais para retomar
 
 ```powershell
