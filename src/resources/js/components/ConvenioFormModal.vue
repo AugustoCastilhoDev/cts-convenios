@@ -1,13 +1,21 @@
 <script setup>
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { api, ApiError } from '../services/api';
+import { useAuthStore } from '../stores/auth';
 import { statusConvenio } from '../utils/status';
 
 // convenio = null cria um novo; com um convênio, edita (a API é PUT com todos os campos).
 const props = defineProps({ convenio: { type: Object, default: null } });
 const emit = defineEmits(['salvo', 'fechar']);
 
+const auth = useAuthStore();
+
+// Administrador Interno não pertence a uma prefeitura: escolhe em qual criar o convênio.
+const precisaEscolherPrefeitura = !props.convenio && auth.user?.role === 'administrador_interno';
+const prefeituras = ref([]);
+
 const form = reactive({
+    tenant_id: '',
     numero_convenio: props.convenio?.numero_convenio ?? '',
     orgao_concedente: props.convenio?.orgao_concedente ?? '',
     objeto: props.convenio?.objeto ?? '',
@@ -17,6 +25,12 @@ const form = reactive({
     data_assinatura: props.convenio?.data_assinatura ?? '',
     data_vigencia_fim: props.convenio?.data_vigencia_fim ?? '',
     prazo_prestacao_contas: props.convenio?.prazo_prestacao_contas ?? '',
+});
+
+onMounted(async () => {
+    if (precisaEscolherPrefeitura) {
+        prefeituras.value = (await api.get('/tenants')).data;
+    }
 });
 
 const salvando = ref(false);
@@ -30,7 +44,9 @@ async function salvar() {
 
     // Datas vazias viram null: a API aceita "nullable", mas rejeita string vazia como data inválida.
     const payload = Object.fromEntries(
-        Object.entries(form).map(([campo, valor]) => [campo, valor === '' ? null : valor]),
+        Object.entries(form)
+            .filter(([campo]) => campo !== 'tenant_id' || precisaEscolherPrefeitura)
+            .map(([campo, valor]) => [campo, valor === '' ? null : valor]),
     );
 
     try {
@@ -64,6 +80,14 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
             </div>
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div v-if="precisaEscolherPrefeitura" class="sm:col-span-2">
+                    <label class="text-sm font-medium" for="prefeitura">Prefeitura</label>
+                    <select id="prefeitura" v-model="form.tenant_id" required :class="campo">
+                        <option value="" disabled>Selecione a prefeitura</option>
+                        <option v-for="p in prefeituras" :key="p.id" :value="p.id">{{ p.razao_social }}</option>
+                    </select>
+                    <p v-if="erros.tenant_id" class="mt-1 text-xs text-red-600">{{ erros.tenant_id[0] }}</p>
+                </div>
                 <div>
                     <label class="text-sm font-medium" for="numero">Número do convênio</label>
                     <input id="numero" v-model="form.numero_convenio" required :class="campo">

@@ -27,7 +27,10 @@ const situacaoAlerta = {
 };
 
 async function carregar() {
-    carregando.value = true;
+    // Só a primeira carga esconde a página; recargas (após salvar) atualizam por cima.
+    if (!convenio.value) {
+        carregando.value = true;
+    }
     erro.value = '';
 
     try {
@@ -63,6 +66,42 @@ async function adicionarContrato() {
         }
     } finally {
         salvandoContrato.value = false;
+    }
+}
+
+// Edição de um contrato já cadastrado, na própria linha da tabela.
+const contratoEditandoId = ref(null);
+const edicao = reactive({ numero_contrato: '', empresa_contratada: '', valor_contratado: '', status_execucao: 'nao_iniciado' });
+const errosEdicao = ref({});
+const salvandoEdicao = ref(false);
+
+function iniciarEdicao(contrato) {
+    contratoEditandoId.value = contrato.id;
+    errosEdicao.value = {};
+    Object.assign(edicao, {
+        numero_contrato: contrato.numero_contrato,
+        empresa_contratada: contrato.empresa_contratada,
+        valor_contratado: contrato.valor_contratado,
+        status_execucao: contrato.status_execucao,
+    });
+}
+
+async function salvarEdicao() {
+    salvandoEdicao.value = true;
+    errosEdicao.value = {};
+
+    try {
+        await api.put(`/convenios/${convenio.value.id}/contratos/${contratoEditandoId.value}`, edicao);
+        contratoEditandoId.value = null;
+        await carregar();
+    } catch (e) {
+        if (e instanceof ApiError && e.status === 422) {
+            errosEdicao.value = e.errors;
+        } else {
+            erro.value = e.message;
+        }
+    } finally {
+        salvandoEdicao.value = false;
     }
 }
 
@@ -165,18 +204,47 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                                 <th class="py-2 pr-4 font-medium">Contrato</th>
                                 <th class="py-2 pr-4 font-medium">Empresa</th>
                                 <th class="py-2 pr-4 text-right font-medium">Valor</th>
-                                <th class="py-2 font-medium">Execução</th>
+                                <th class="py-2 pr-4 font-medium">Execução</th>
+                                <th class="py-2" />
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="c in convenio.contratos_vinculados" :key="c.id" class="border-t border-slate-100">
-                                <td class="py-2 pr-4 font-medium">{{ c.numero_contrato }}</td>
-                                <td class="py-2 pr-4">{{ c.empresa_contratada }}</td>
-                                <td class="py-2 pr-4 text-right">{{ formatarMoeda(c.valor_contratado) }}</td>
-                                <td class="py-2">{{ c.status_execucao_label }}</td>
-                            </tr>
+                            <template v-for="c in convenio.contratos_vinculados" :key="c.id">
+                                <tr v-if="contratoEditandoId !== c.id" class="border-t border-slate-100">
+                                    <td class="py-2 pr-4 font-medium">{{ c.numero_contrato }}</td>
+                                    <td class="py-2 pr-4">{{ c.empresa_contratada }}</td>
+                                    <td class="py-2 pr-4 text-right">{{ formatarMoeda(c.valor_contratado) }}</td>
+                                    <td class="py-2 pr-4">{{ c.status_execucao_label }}</td>
+                                    <td class="py-2 text-right">
+                                        <button v-if="auth.podeEditar" class="text-blue-700 hover:underline" @click="iniciarEdicao(c)">Editar</button>
+                                    </td>
+                                </tr>
+                                <tr v-else class="border-t border-slate-100 bg-slate-50 align-top">
+                                    <td class="p-2">
+                                        <input v-model="edicao.numero_contrato" :class="campo">
+                                        <p v-if="errosEdicao.numero_contrato" class="mt-1 text-xs text-red-600">{{ errosEdicao.numero_contrato[0] }}</p>
+                                    </td>
+                                    <td class="p-2">
+                                        <input v-model="edicao.empresa_contratada" :class="campo">
+                                        <p v-if="errosEdicao.empresa_contratada" class="mt-1 text-xs text-red-600">{{ errosEdicao.empresa_contratada[0] }}</p>
+                                    </td>
+                                    <td class="p-2">
+                                        <input v-model="edicao.valor_contratado" type="number" min="0" step="0.01" :class="campo">
+                                        <p v-if="errosEdicao.valor_contratado" class="mt-1 text-xs text-red-600">{{ errosEdicao.valor_contratado[0] }}</p>
+                                    </td>
+                                    <td class="p-2">
+                                        <select v-model="edicao.status_execucao" :class="campo">
+                                            <option v-for="st in statusContrato" :key="st.valor" :value="st.valor">{{ st.titulo }}</option>
+                                        </select>
+                                    </td>
+                                    <td class="p-2 text-right whitespace-nowrap">
+                                        <button :disabled="salvandoEdicao" class="mr-3 font-medium text-blue-700 hover:underline disabled:opacity-60" @click="salvarEdicao">Salvar</button>
+                                        <button class="text-slate-600 hover:underline" @click="contratoEditandoId = null">Cancelar</button>
+                                    </td>
+                                </tr>
+                            </template>
                             <tr v-if="!convenio.contratos_vinculados?.length">
-                                <td colspan="4" class="py-4 text-center text-slate-400">Nenhum contrato vinculado</td>
+                                <td colspan="5" class="py-4 text-center text-slate-400">Nenhum contrato vinculado</td>
                             </tr>
                         </tbody>
                     </table>

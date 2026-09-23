@@ -55,10 +55,15 @@ function finalizarArraste() {
     sobreColuna.value = null;
 }
 
-async function soltar(status) {
+function soltar(status) {
     const convenio = arrastando.value;
     finalizarArraste();
 
+    return moverPara(convenio, status);
+}
+
+// Usado pelo arrastar e soltar (mouse) e pelo seletor "Mover para…" (toque/teclado).
+async function moverPara(convenio, status) {
     if (!convenio || convenio.status === status) {
         return;
     }
@@ -132,11 +137,11 @@ onMounted(carregar);
 
         <p v-if="carregando" class="mt-8 text-sm text-slate-500">Carregando convênios…</p>
 
-        <div v-else class="mt-4 flex gap-4 overflow-x-auto pb-4">
+        <div v-else class="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
             <section
                 v-for="coluna in colunas"
                 :key="coluna.status"
-                class="min-w-60 flex-1 rounded-lg bg-slate-100 transition-colors"
+                class="min-w-[85%] flex-1 snap-start rounded-lg bg-slate-100 transition-colors sm:min-w-60"
                 :class="{ 'ring-2 ring-blue-500': sobreColuna === coluna.status }"
                 @dragover.prevent="sobreColuna = coluna.status"
                 @dragleave="sobreColuna = null"
@@ -189,6 +194,18 @@ onMounted(carregar);
                                 <dd class="font-medium">{{ formatarData(c.data_vigencia_fim) }}</dd>
                             </div>
                         </dl>
+
+                        <select
+                            v-if="auth.podeEditar"
+                            :value="c.status"
+                            aria-label="Mover para etapa"
+                            class="mt-3 w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600"
+                            @change="moverPara(c, $event.target.value)"
+                        >
+                            <option v-for="col in colunas" :key="col.status" :value="col.status">
+                                {{ col.status === c.status ? 'Etapa: ' : 'Mover para: ' }}{{ col.titulo }}
+                            </option>
+                        </select>
                     </article>
 
                     <p v-if="!porColuna[coluna.status].length" class="px-2 py-4 text-center text-xs text-slate-400">
