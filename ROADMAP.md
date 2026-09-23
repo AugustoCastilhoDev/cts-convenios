@@ -1,6 +1,6 @@
 # Roadmap — CTS Convênios
 
-> Última atualização: 2026-09-23
+> Última atualização: 2026-09-23 (gestão de usuários)
 > Este arquivo existe para retomar o desenvolvimento sem perder contexto entre sessões. Sempre que uma etapa for concluída, mova-a para "Concluído" com a data.
 
 ## Stack e decisões de arquitetura já validadas
@@ -54,26 +54,36 @@
 - `ArquivoConvenioPolicy::create()` agora recebe o `Convenio` da rota e exige tenant igual (mesmo padrão de `ContratoVinculadoPolicy`). Delete continua só Administrador Interno, e é soft delete (arquivo físico preservado para auditoria TCE).
 - 9 testes novos (33 no total, todos passando) + smoke test via HTTP real (upload, download idêntico byte a byte, 401 sem token).
 
+### E-mail via Resend (2026-09-23)
+- `resend/resend-php` instalado; `MAIL_MAILER=resend` + `RESEND_API_KEY` no `src/.env` (nunca versionado). Comando `php artisan email:testar {destino}` mostra driver/remetente e envia mensagem de teste. Envio real validado (chegou, na pasta de spam).
+
+### Gestão de usuários (2026-09-23)
+- `GET/POST /users`, `GET/PUT /users/{user}` — exclusivo do Administrador Interno (`UserPolicy`). Cria só Gestor/Fiscal (papel e `tenant_id` definidos pelo `UserService`, fora do `#[Fillable]`); `tenant_id` não é editável. Contas de Administrador Interno não aparecem nem são editáveis pela API.
+- Desativar (`active = false`) em vez de excluir: preserva autoria na auditoria. Desativar ou trocar a senha revoga todos os tokens.
+- Middleware `conta.ativa` (`EnsureAccountIsActive`) em todas as rotas autenticadas: barra na hora tokens de usuário desativado **ou de prefeitura (`tenants.active`) inativa**. Login também bloqueia os dois casos.
+- `php artisan admin:criar {email} {--nome=}` — único caminho para criar Administrador Interno; senha digitada oculta (mín. 10, letras e números), nada fixo no código.
+- `User` agora é `Auditable` (password/remember_token excluídos em `config/audit.php`).
+- **Bugs de auditoria encontrados e corrigidos:** (1) o resolver do pacote só consultava os guards `web`/`api`, então toda auditoria HTTP gravava `user_id` nulo — adicionado `sanctum` em `config/audit.php`; (2) `audits.auditable_id` era `uuid`, mas `users.id` é bigint, o que dava 500 ao auditar um User no Postgres — migration muda a coluna para `string(36)`.
+- 14 testes novos (47 no total, todos passando) + smoke test HTTP real em Postgres.
+
 ## Pendências conhecidas (não esquecidas, só adiadas)
 
-- [ ] Login não bloqueia usuário cujo tenant está `active = false`.
-- [ ] Comando `php artisan admin:criar` para criar o primeiro Administrador Interno em produção sem depender do `DatabaseSeeder` (que tem senha fixa `password` — inaceitável fora de dev).
-- [ ] SMTP ainda não configurado (`MAIL_MAILER=log`) — adiado a pedido do usuário, necessário antes do Módulo 3 funcionar de verdade.
+- [ ] Administrador Interno não consegue trocar a própria senha pela API (só recriando via console); avaliar endpoint de "minha conta" quando o front-end existir.
+- [ ] E-mail em produção: hoje envia via Resend com domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev. Ao registrar o domínio do CTS: verificar no Resend, trocar `MAIL_FROM_ADDRESS`, DMARC em `p=quarantine` após estabilizar, e testar entrega em caixas institucionais (`.gov.br`, Outlook), pois o primeiro teste caiu em spam no Gmail (reputação de domínio novo + texto puro; SPF/DKIM/DMARC estavam corretos).
 
 ## Próximos passos (em ordem sugerida)
 
-1. **Gestão de usuários** — CRUD de `users` restrito a Administrador Interno (criar Gestor/Fiscal de uma prefeitura). Inclui o comando `admin:criar` da pendência acima.
-2. **Motor de Alertas (Módulo 3 — o diferencial do produto)**:
+1. **Motor de Alertas (Módulo 3 — o diferencial do produto)**:
    - Job agendado (Laravel Scheduler) varrendo `convenios.data_vigencia_fim` diariamente.
    - Régua de 90/60/30/15 dias.
    - Notificações por e-mail (precisa do SMTP configurado antes) e WhatsApp (gateway a definir).
    - Fila via Redis (`QUEUE_CONNECTION=redis` já configurado).
-3. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)**:
+2. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)**:
    - Kanban de convênios por status.
    - Dashboard com indicadores financeiros (saldo disponível já vem pronto da API).
    - Tela de repositório de arquivos.
-4. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
-5. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
+3. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
+4. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
 
 ## Armadilhas conhecidas (para não repetir)
 
@@ -82,6 +92,7 @@
 - **Ownership dos arquivos**: rodar `composer` via a imagem oficial `composer:2` (root) deixa arquivos com dono `root`, e o `app-server` roda como `appuser` (não-root). Depois de instalar pacotes assim, rode:
   `docker compose exec -u root app-server chown -R appuser:appuser /var/www/html` (com `MSYS_NO_PATHCONV=1` na frente, no Git Bash).
 - **NUNCA rode testes (`RefreshDatabase`) contra o Postgres de desenvolvimento** — já aconteceu uma vez por causa de uma variável de ambiente duplicada no `docker-compose.yml` e apagou os dados do seeder. Os testes devem sempre resolver para SQLite (`config('database.default')` deve imprimir `sqlite` durante `php artisan test`). Se algum dia voltar a apontar para `pgsql`, **pare e investigue antes de rodar testes** — depois rode `php artisan db:seed --force` para repopular o dev.
+- **O SQLite dos testes não valida tipos de coluna** (ex.: gravar `24` numa coluna `uuid` passa). Mudanças que envolvam auditoria, chaves ou tipos precisam de um smoke test HTTP real contra o Postgres — foi assim que os 2 bugs de auditoria acima apareceram.
 - **`owen-it/laravel-auditing` não audita nada rodado via `artisan`/`tinker`/seeders** por padrão (`audit.console => false`) — isso é proposital do pacote, não bug. Só audita requisições HTTP reais.
 
 ## Comandos essenciais para retomar
