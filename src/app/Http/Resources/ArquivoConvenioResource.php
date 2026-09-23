@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ArquivoConvenio;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * file_path (caminho interno em disco) nunca é exposto: o cliente baixa
  * via download_url, que passa pela Policy.
  *
- * @mixin \App\Models\ArquivoConvenio
+ * @mixin ArquivoConvenio
  */
 class ArquivoConvenioResource extends JsonResource
 {

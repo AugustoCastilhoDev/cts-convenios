@@ -8,8 +8,8 @@ use App\Http\Resources\ArquivoConvenioResource;
 use App\Models\ArquivoConvenio;
 use App\Models\Convenio;
 use App\Services\ArquivoConvenioService;
-use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -17,9 +17,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Middleware('auth:sanctum')]
 class ArquivoConvenioController extends Controller
 {
-    public function __construct(private readonly ArquivoConvenioService $arquivos)
-    {
-    }
+    public function __construct(private readonly ArquivoConvenioService $arquivos) {}
 
     /**
      * Reaproveita a ConvenioPolicy::view() — quem vê o convênio, lista

@@ -30,6 +30,12 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        if (! $user->active || ($user->tenant_id && ! $user->tenant->active)) {
+            throw ValidationException::withMessages([
+                'email' => __('Conta desativada. Entre em contato com o suporte.'),
+            ]);
+        }
+
         $token = $user->createToken($request->string('device_name')->toString());
 
         return response()->json([

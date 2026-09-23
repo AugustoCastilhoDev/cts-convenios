@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Convenio;
 use App\Models\ContratoVinculado;
+use App\Models\Convenio;
 
 class ContratoVinculadoService
 {

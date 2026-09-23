@@ -3,8 +3,8 @@
 namespace App\Policies;
 
 use App\Enums\UserRole;
-use App\Models\Convenio;
 use App\Models\ContratoVinculado;
+use App\Models\Convenio;
 use App\Models\User;
 use App\Policies\Concerns\ChecksTenantOwnership;
 
