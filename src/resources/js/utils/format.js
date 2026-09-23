@@ -80,3 +80,29 @@ export function faixaDoPrazo(dias, status) {
 
     return 'border-l-emerald-500';
 }
+
+/** Frase para o sino de alertas: "vence em 15 dias", "venceu há 3 dias"... */
+export function textoDoPrazo(dias) {
+    if (dias < 0) {
+        return `venceu há ${Math.abs(dias)} ${Math.abs(dias) === 1 ? 'dia' : 'dias'}`;
+    }
+
+    if (dias === 0) {
+        return 'vence hoje';
+    }
+
+    return dias === 1 ? 'vence amanhã' : `vence em ${dias} dias`;
+}
+
+/** Cor do ponto de urgência (mesma régua de faixaDoPrazo e situacaoPrazo). */
+export function corDoPrazo(dias) {
+    if (dias <= 15) {
+        return 'bg-red-500';
+    }
+
+    if (dias <= 30) {
+        return 'bg-orange-500';
+    }
+
+    return 'bg-amber-400';
+}

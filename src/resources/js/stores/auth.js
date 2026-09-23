@@ -9,6 +9,8 @@ export const useAuthStore = defineStore('auth', {
 
     getters: {
         isAuthenticated: (state) => state.token !== null,
+        // O sino de alertas é de quem trabalha os prazos de uma prefeitura (espelha AlertaPrazoPolicy).
+        temSino: (state) => ['gestor_convenios', 'fiscal_controle_interno'].includes(state.user?.role),
         isAdmin: (state) => state.user?.role === 'administrador_interno',
         // Só o Administrador Interno apaga registros (ArquivoConvenioPolicy::delete e ConvenioPolicy::delete).
         podeExcluir: (state) => state.user?.role === 'administrador_interno',

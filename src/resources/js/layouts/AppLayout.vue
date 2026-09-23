@@ -1,11 +1,14 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AlterarSenhaModal from '../components/AlterarSenhaModal.vue';
 import Icone from '../components/Icone.vue';
+import SinoAlertas from '../components/SinoAlertas.vue';
 import { useAuthStore } from '../stores/auth';
+import { useNotificacoesStore } from '../stores/notificacoes';
 
 const auth = useAuthStore();
+const notificacoes = useNotificacoesStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -59,7 +62,20 @@ const iniciais = computed(() => {
     return ((partes[0]?.[0] ?? '') + (partes.length > 1 ? partes.at(-1)[0] : '')).toUpperCase();
 });
 
+onMounted(() => {
+    if (auth.temSino) {
+        notificacoes.iniciar();
+    }
+});
+onBeforeUnmount(() => notificacoes.parar());
+
+// Contador na aba do navegador: chama a atenção mesmo com o sistema em segundo plano.
+watch(() => notificacoes.naoLidas, (total) => {
+    document.title = total ? `(${total}) CTS Convênios` : 'CTS Convênios';
+}, { immediate: true });
+
 async function sair() {
+    notificacoes.limpar();
     await auth.logout();
     router.push({ name: 'login' });
 }
@@ -78,6 +94,7 @@ const itemInativo = 'text-slate-300 hover:bg-white/5 hover:text-white';
                 <Icone nome="menu" />
             </button>
             <span class="font-semibold tracking-tight">CTS Convênios</span>
+            <SinoAlertas v-if="auth.temSino" escuro class="ml-auto" />
         </header>
 
         <div v-if="gavetaAberta" class="fixed inset-0 z-30 bg-slate-900/60 lg:hidden" @click="gavetaAberta = false" />
@@ -162,7 +179,12 @@ const itemInativo = 'text-slate-300 hover:bg-white/5 hover:text-white';
         </aside>
 
         <div class="transition-[padding] duration-200" :class="recolhido ? 'lg:pl-[4.75rem]' : 'lg:pl-64'">
-            <main class="mx-auto max-w-[1800px] px-4 py-6 lg:px-8 lg:py-8">
+            <!-- Barra superior do desktop: fica visível ao rolar, para o sino estar sempre à mão -->
+            <div class="sticky top-0 z-30 hidden h-14 items-center justify-end bg-canvas/85 px-8 backdrop-blur-sm lg:flex">
+                <SinoAlertas v-if="auth.temSino" />
+            </div>
+
+            <main class="mx-auto max-w-[1800px] px-4 py-6 lg:px-8 lg:pt-2 lg:pb-8">
                 <RouterView />
             </main>
         </div>

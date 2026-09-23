@@ -214,7 +214,7 @@ class AlertaPrazoService
      * O prazo mudou ou o convênio saiu dos status monitorados depois de o
      * alerta ser registrado: o e-mail estaria desatualizado.
      */
-    private function estaObsoleto(AlertaPrazo $alerta, Convenio $convenio): bool
+    public function estaObsoleto(AlertaPrazo $alerta, Convenio $convenio): bool
     {
         $tipo = $alerta->tipo_prazo;
 

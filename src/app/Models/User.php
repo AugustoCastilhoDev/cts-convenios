@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Attributes\UseResource;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -57,6 +58,12 @@ class User extends Authenticatable implements AuditableContract
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** Alertas de prazo que este usuário já leu no sino do sistema. */
+    public function alertasLidos(): BelongsToMany
+    {
+        return $this->belongsToMany(AlertaPrazo::class, 'alerta_prazo_leituras')->withPivot('lido_em');
     }
 
     public function isAdministradorInterno(): bool

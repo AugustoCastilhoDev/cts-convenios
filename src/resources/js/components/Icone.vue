@@ -51,6 +51,11 @@ defineProps({ nome: { type: String, required: true } });
             <circle cx="8" cy="15" r="4" />
             <path d="M11 12l9-9M16 7l3 3M14 9l2 2" />
         </template>
+        <!-- sino (alertas) -->
+        <template v-if="nome === 'sino'">
+            <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9z" />
+            <path d="M10 19a2 2 0 0 0 4 0" />
+        </template>
         <!-- sair -->
         <template v-if="nome === 'sair'">
             <path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5" />

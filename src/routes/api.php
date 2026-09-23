@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContratoVinculadoController;
 use App\Http\Controllers\Api\ConvenioController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\NotificacaoController;
 use App\Http\Controllers\Api\RelatorioConvenioController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\UserController;
@@ -24,6 +25,11 @@ Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
     Route::get('/audits', [AuditController::class, 'index']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    // Sino de alertas. "lidas" antes de "{alerta}" para não ser lido como um id.
+    Route::get('/notificacoes', [NotificacaoController::class, 'index']);
+    Route::post('/notificacoes/lidas', [NotificacaoController::class, 'marcarTodasLidas']);
+    Route::post('/notificacoes/{alerta}/lida', [NotificacaoController::class, 'marcarLida']);
 
     Route::get('/tenants', [TenantController::class, 'index']);
     Route::post('/tenants', [TenantController::class, 'store']);
