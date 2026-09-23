@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AlertaPrazoController;
 use App\Http\Controllers\Api\ArquivoConvenioController;
+use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContratoVinculadoController;
 use App\Http\Controllers\Api\ConvenioController;
@@ -18,10 +19,15 @@ Route::post('/logout', [AuthController::class, 'logout']);
 // tokens ainda válidos de contas desativadas.
 Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::put('/me/password', [AuthController::class, 'alterarSenha']);
+
+    Route::get('/audits', [AuditController::class, 'index']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/tenants', [TenantController::class, 'index']);
+    Route::post('/tenants', [TenantController::class, 'store']);
+    Route::put('/tenants/{tenant}', [TenantController::class, 'update']);
 
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);

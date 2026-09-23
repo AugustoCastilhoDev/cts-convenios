@@ -29,6 +29,11 @@ class Tenant extends Model implements AuditableContract
         ];
     }
 
+    public function usuarios(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function convenios(): HasMany
     {
         return $this->hasMany(Convenio::class);

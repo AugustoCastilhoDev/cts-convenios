@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Arr;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class UserService
 {
@@ -42,5 +43,20 @@ class UserService
         }
 
         return $usuario;
+    }
+
+    /**
+     * Troca a senha do próprio usuário. Todos os outros tokens (outros
+     * dispositivos/sessões) são revogados; só o token atual continua valendo.
+     */
+    public function alterarSenha(User $usuario, string $novaSenha): void
+    {
+        $usuario->forceFill(['password' => $novaSenha])->save();
+
+        // Fora de uma requisição por token (ex.: testes com actingAs) não há token "atual" a preservar.
+        $atual = $usuario->currentAccessToken();
+        $usuario->tokens()
+            ->when($atual instanceof PersonalAccessToken, fn ($query) => $query->where('id', '!=', $atual->getKey()))
+            ->delete();
     }
 }

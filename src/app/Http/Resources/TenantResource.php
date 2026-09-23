@@ -15,6 +15,9 @@ class TenantResource extends JsonResource
             'id' => $this->id,
             'razao_social' => $this->razao_social,
             'cnpj' => $this->cnpj,
+            'active' => $this->active,
+            'usuarios_count' => $this->whenCounted('usuarios'),
+            'convenios_count' => $this->whenCounted('convenios'),
         ];
     }
 }
