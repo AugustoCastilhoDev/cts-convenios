@@ -77,6 +77,12 @@
 - **Segurança em dev:** `ALERTAS_REDIRECIONAR_PARA` (em `src/.env`) desvia TODOS os alertas para um e-mail só e marca o assunto com `[TESTE]` — os dados de teste têm e-mails fictícios e enviar para eles queima a reputação do domínio. **Em produção deve ficar vazio.**
 - 29 testes novos (77 no total) + teste real de ponta a ponta (worker enviou os 2 alertas, 2ª execução não duplicou).
 
+### Front-end Vue.js 3 — base e Kanban (2026-09-23)
+- SPA em `src/resources/js` (Vue 3 + Vue Router + Pinia + Tailwind 4), servida por um shell Blade (`resources/views/app.blade.php`) com rota catch-all em `routes/web.php` (tudo fora de `/api/*` cai no Vue Router).
+- Cliente HTTP em `services/api.js` (fetch + Bearer token do Sanctum guardado em `localStorage`; 401 derruba a sessão e volta ao login).
+- Tela de login, layout autenticado e **Kanban** de convênios por etapa com arrastar e soltar (só para quem pode editar; atualização otimista com rollback se a API recusar).
+- O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
+
 ## Pendências conhecidas (não esquecidas, só adiadas)
 
 - [ ] Administrador Interno não consegue trocar a própria senha pela API (só recriando via console); avaliar endpoint de "minha conta" quando o front-end existir.
@@ -85,10 +91,10 @@
 
 ## Próximos passos (em ordem sugerida)
 
-1. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)**:
-   - Kanban de convênios por status.
+1. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)** — base, login e Kanban prontos; falta:
+   - Detalhe do convênio (contratos vinculados, histórico de alertas) e formulário de criar/editar convênio.
    - Dashboard com indicadores financeiros (saldo disponível já vem pronto da API).
-   - Tela de repositório de arquivos.
+   - Tela de repositório de arquivos (upload/download).
 2. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
 3. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
 
@@ -111,6 +117,10 @@ docker compose up -d
 # Rodar migrations/seeder (se o banco estiver zerado)
 docker compose exec app-server php artisan migrate --force
 docker compose exec app-server php artisan db:seed --force
+
+# Front-end (rodar no Windows, dentro de src/)
+npm install
+npm run build   # ou: npm run dev  (hot reload em http://localhost:5173, app em http://localhost:8000)
 
 # Rodar a suíte de testes
 docker compose exec app-server php artisan test

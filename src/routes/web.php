@@ -2,6 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// SPA Vue: qualquer rota que não seja da API cai no mesmo shell; quem decide
+// a tela é o Vue Router.
+Route::view('/{any?}', 'app')->where('any', '^(?!api/).*$');
