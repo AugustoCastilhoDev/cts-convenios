@@ -10,26 +10,21 @@ use App\Models\Convenio;
 use App\Services\ConvenioService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 
 #[Middleware('auth:sanctum')]
 class ConvenioController extends Controller
 {
-    public function __construct(private readonly ConvenioService $convenios)
-    {
-    }
+    public function __construct(private readonly ConvenioService $convenios) {}
 
     #[Authorize('viewAny', Convenio::class)]
     public function index(Request $request): AnonymousResourceCollection
     {
         $convenios = Convenio::query()
             ->withSum('contratosVinculados as total_contratado', 'valor_contratado')
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
-            ->when(
-                $request->filled('busca'),
-                fn ($query) => $query->where('numero_convenio', 'like', '%'.$request->string('busca').'%')
-            )
+            ->filtrar($request->input('status'), $request->input('busca'))
             ->orderByDesc('data_vigencia_fim')
             ->paginate($request->integer('por_pagina', 15));
 
@@ -70,7 +65,7 @@ class ConvenioController extends Controller
      * geral) — só o Administrador Interno passa, via before() da Policy.
      */
     #[Authorize('delete', 'convenio')]
-    public function destroy(Convenio $convenio): \Illuminate\Http\Response
+    public function destroy(Convenio $convenio): Response
     {
         $this->convenios->remover($convenio);
 

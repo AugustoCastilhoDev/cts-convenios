@@ -4,6 +4,7 @@ import { api, ApiError } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 import { formatarMoeda, formatarData, situacaoPrazo } from '../utils/format';
 import { statusConvenio } from '../utils/status';
+import BotaoExportar from '../components/BotaoExportar.vue';
 import ConvenioFormModal from '../components/ConvenioFormModal.vue';
 
 const auth = useAuthStore();
@@ -120,6 +121,15 @@ onMounted(carregar);
                 placeholder="Buscar por número, objeto ou órgão"
                 class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm sm:w-72 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
             >
+            <BotaoExportar
+                rotulo="Exportar carteira"
+                :opcoes="[
+                    { rotulo: 'Planilha (CSV)', path: '/convenios/exportar', params: { formato: 'csv' } },
+                    { rotulo: 'Documento (PDF)', path: '/convenios/exportar', params: { formato: 'pdf' } },
+                ]"
+                class="shrink-0"
+                @erro="erro = $event"
+            />
             <button
                 v-if="auth.podeEditar"
                 class="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"

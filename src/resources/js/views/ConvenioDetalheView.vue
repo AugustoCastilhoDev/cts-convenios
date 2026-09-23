@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth';
 import { formatarMoeda, formatarData, situacaoPrazo } from '../utils/format';
 import { statusContrato } from '../utils/status';
 import ArquivosConvenio from '../components/ArquivosConvenio.vue';
+import BotaoExportar from '../components/BotaoExportar.vue';
 import ConvenioFormModal from '../components/ConvenioFormModal.vue';
 
 const route = useRoute();
@@ -135,6 +136,11 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="rounded-full bg-slate-200 px-3 py-1 text-sm font-medium">{{ convenio.status_label }}</span>
+                    <BotaoExportar
+                        rotulo="Relatório"
+                        :opcoes="[{ rotulo: 'Ficha completa (PDF)', path: `/convenios/${convenio.id}/ficha` }]"
+                        @erro="erro = $event"
+                    />
                     <button
                         v-if="auth.podeEditar"
                         class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50"

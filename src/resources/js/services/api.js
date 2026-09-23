@@ -80,12 +80,15 @@ async function request(method, path, { body, params } = {}) {
     return data;
 }
 
-/**
- * Baixa um arquivo protegido: o navegador não anexa o Bearer token a um link
- * comum, então buscamos o conteúdo com fetch e entregamos como Blob.
- */
-export async function baixarBlob(path) {
-    const response = await fetch(new URL(`/api${path}`, window.location.origin), {
+async function buscarArquivo(path, params) {
+    const url = new URL(`/api${path}`, window.location.origin);
+    Object.entries(params ?? {}).forEach(([chave, valor]) => {
+        if (valor !== undefined && valor !== null && valor !== '') {
+            url.searchParams.set(chave, valor);
+        }
+    });
+
+    const response = await fetch(url, {
         headers: { Accept: '*/*', Authorization: `Bearer ${tokenStorage.get()}` },
     });
 
@@ -97,7 +100,34 @@ export async function baixarBlob(path) {
         throw new ApiError(response.status, data);
     }
 
-    return response.blob();
+    return response;
+}
+
+/**
+ * Baixa um arquivo protegido: o navegador não anexa o Bearer token a um link
+ * comum, então buscamos o conteúdo com fetch e entregamos como Blob.
+ */
+export async function baixarBlob(path, params) {
+    return (await buscarArquivo(path, params)).blob();
+}
+
+/** Como baixarBlob, mas também devolve o nome sugerido pelo servidor (Content-Disposition). */
+export async function baixarRelatorio(path, params) {
+    const response = await buscarArquivo(path, params);
+    const cabecalho = response.headers.get('Content-Disposition') ?? '';
+    const nome = /filename="?([^";]+)"?/i.exec(cabecalho)?.[1] ?? 'relatorio';
+
+    return { blob: await response.blob(), nome };
+}
+
+/** Entrega um Blob ao usuário como download. */
+export function salvarBlob(blob, nome) {
+    const endereco = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = endereco;
+    link.download = nome;
+    link.click();
+    URL.revokeObjectURL(endereco);
 }
 
 export const api = {

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Attributes\UseResource;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -51,6 +52,17 @@ class Convenio extends Model implements AuditableContract
             'data_vigencia_fim' => 'date',
             'prazo_prestacao_contas' => 'date',
         ];
+    }
+
+    /**
+     * Filtros compartilhados pela listagem e pela exportação, para que o
+     * relatório traga exatamente o que a tela mostra.
+     */
+    public function scopeFiltrar(Builder $query, ?string $status, ?string $busca): void
+    {
+        $query
+            ->when($status, fn (Builder $query) => $query->where('status', $status))
+            ->when($busca, fn (Builder $query) => $query->where('numero_convenio', 'like', '%'.$busca.'%'));
     }
 
     public function contratosVinculados(): HasMany

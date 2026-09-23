@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContratoVinculadoController;
 use App\Http\Controllers\Api\ConvenioController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\RelatorioConvenioController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,8 @@ Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
     Route::prefix('convenios')->group(function () {
         Route::get('/', [ConvenioController::class, 'index']);
         Route::post('/', [ConvenioController::class, 'store']);
+        // Antes de /{convenio}, senão "exportar" seria lido como o id de um convênio.
+        Route::get('/exportar', [RelatorioConvenioController::class, 'carteira']);
         Route::get('/{convenio}', [ConvenioController::class, 'show']);
         Route::put('/{convenio}', [ConvenioController::class, 'update']);
         Route::delete('/{convenio}', [ConvenioController::class, 'destroy']);
@@ -41,6 +44,7 @@ Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
         Route::get('/{convenio}/contratos/{contrato}', [ContratoVinculadoController::class, 'show']);
         Route::put('/{convenio}/contratos/{contrato}', [ContratoVinculadoController::class, 'update']);
 
+        Route::get('/{convenio}/ficha', [RelatorioConvenioController::class, 'ficha']);
         Route::get('/{convenio}/alertas', [AlertaPrazoController::class, 'index']);
 
         Route::get('/{convenio}/arquivos', [ArquivoConvenioController::class, 'index']);

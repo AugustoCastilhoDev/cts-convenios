@@ -85,6 +85,7 @@
 - Pendências do front-end resolvidas: Administrador Interno escolhe a prefeitura ao criar convênio (novo `GET /api/tenants`, só admin); contratos editáveis na própria linha da tabela; Kanban com rolagem por encaixe no celular e seletor "Mover para…" em cada card (o arrastar do HTML5 não funciona em toque).
 - **Painel (dashboard)** em `/` (tela inicial após o login) alimentado por `GET /api/dashboard` (`DashboardService`, escopo por prefeitura): convênios em andamento, valor da carteira, contratado (% da carteira), saldo disponível, alerta de convênios com contratos acima do valor disponível, convênios por etapa, prazos críticos (vencidos + próximos 90 dias, mesmas regras do Motor de Alertas) e contratos por situação de execução. "Carteira" = convênios não finalizados. O Kanban passou para `/convenios`.
 - **Documentos do convênio** (seção no detalhe): lista com tipo, tamanho e data; envio com tipo do documento (só Gestor/admin; validação prévia de extensão e 20 MB no navegador, a do servidor continua valendo); download autenticado (busca o arquivo com o token e entrega como Blob, pois link comum não leva o Bearer); botão Excluir só para o Administrador Interno, com confirmação; "Ver mais" quando passa de 15 arquivos.
+- **Exportação para o Fiscal** (`RelatorioConvenioService`, pacote `barryvdh/laravel-dompdf`): `GET /api/convenios/exportar?formato=csv|pdf` (carteira; aceita `status` e `busca`) e `GET /api/convenios/{id}/ficha` (PDF completo: dados, financeiro, contratos, documentos, alertas e trilha de auditoria). CSV em UTF-8 com BOM, separador `;` e vírgula decimal (abre direto no Excel pt-BR) e proteção contra injeção de fórmula; PDFs com subconjunto de fontes (~25 KB). Quem vê o convênio exporta, sempre dentro da própria prefeitura; cada exportação vai para o log (`Relatório exportado`, com user_id). Na tela: botão "Exportar carteira" no Kanban e "Relatório → Ficha completa" no detalhe. O `Convenio::filtrar()` é o filtro único da listagem e da exportação.
 - O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
 
 ## Pendências conhecidas (não esquecidas, só adiadas)
@@ -103,8 +104,7 @@ O front-end do Módulo 2 (Kanban, painel, detalhe, contratos e documentos) está
    - Exclusão de convênio lançado por engano (a API `DELETE /api/convenios/{id}` já existe só para o admin; falta botão com confirmação).
    - Consulta da trilha de auditoria (`audits`) por prefeitura/convênio.
    - Trocar a própria senha (pendência conhecida: hoje o admin não consegue pela API).
-2. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
-3. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
+2. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
 
 ## Armadilhas conhecidas (para não repetir)
 

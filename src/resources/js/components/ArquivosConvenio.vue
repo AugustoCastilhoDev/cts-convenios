@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import { api, ApiError, baixarBlob } from '../services/api';
+import { api, ApiError, baixarBlob, salvarBlob } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 import { formatarTamanho } from '../utils/format';
 
@@ -107,12 +107,7 @@ async function baixar(arquivo) {
 
     try {
         const blob = await baixarBlob(`/convenios/${props.convenioId}/arquivos/${arquivo.id}/download`);
-        const endereco = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = endereco;
-        link.download = arquivo.nome_original;
-        link.click();
-        URL.revokeObjectURL(endereco);
+        salvarBlob(blob, arquivo.nome_original);
     } catch (e) {
         erro.value = `Não foi possível baixar o arquivo: ${e.message}`;
     } finally {
