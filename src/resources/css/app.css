@@ -3,7 +3,68 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Identidade visual do CTS Convênios.
+ *
+ * - petróleo (sidebar e destaques escuros): sério e institucional, sem o azul-padrão de "sistema de governo";
+ * - brand (ações e links): um teal profundo, que não se confunde com os verdes/vermelhos/âmbar dos prazos;
+ * - canvas: cinza levemente azulado, mais escuro que o branco dos cartões, para eles se destacarem;
+ * - ouro: um único toque quente, só no item de menu ativo.
+ * As cores de prazo (vermelho/laranja/âmbar) e de etapa do Kanban são semânticas e ficam no Tailwind padrão.
+ */
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-brand-50: #e8f5f7;
+    --color-brand-100: #c8e7ec;
+    --color-brand-200: #9fd4dc;
+    --color-brand-300: #6bb9c6;
+    --color-brand-400: #3a9fb0;
+    --color-brand-500: #0f8797;
+    --color-brand-600: #0b7285;
+    --color-brand-700: #0a5c6d;
+    --color-brand-800: #0b4a58;
+    --color-brand-900: #0c3a46;
+
+    --color-petroleo: #0a2a33;
+    --color-petroleo-claro: #12414d;
+    --color-canvas: #e7edef;
+    --color-coluna: #d9e3e7;
+    --color-borda: #d3dde1;
+    --color-ouro: #e9b44c;
+    --color-menta: #7fe0c2;
+
+    --shadow-cartao: 0 1px 2px rgb(10 42 51 / 0.07), 0 4px 14px -2px rgb(10 42 51 / 0.09);
+    --shadow-cartao-alto: 0 2px 4px rgb(10 42 51 / 0.08), 0 10px 24px -4px rgb(10 42 51 / 0.16);
+}
+
+/* Cartão padrão: branco sobre o canvas, com borda e sombra em camadas para se destacar. */
+@utility cartao {
+    background-color: white;
+    border: 1px solid var(--color-borda);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-cartao);
+}
+
+/* Valores em dinheiro alinham melhor com algarismos de largura fixa. */
+@layer base {
+    body {
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Foco de teclado sempre visível. */
+    :focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
 }

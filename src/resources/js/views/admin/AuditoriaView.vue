@@ -67,12 +67,12 @@ function formatarDataHora(iso) {
 
 onMounted(carregar);
 
-const campo = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none';
+const campo = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 focus:outline-none';
 </script>
 
 <template>
     <div>
-        <h1 class="text-xl font-semibold">Auditoria</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-petroleo">Auditoria</h1>
         <p class="text-sm text-slate-500">Quem alterou o quê, quando e de onde. Somente leitura; senhas nunca são registradas.</p>
 
         <form class="mt-4 flex flex-wrap items-end gap-3" @submit.prevent="filtrar">
@@ -102,13 +102,13 @@ const campo = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm foc
                 <label class="block text-xs text-slate-500" for="f-registro">ID do registro</label>
                 <input id="f-registro" v-model="filtros.registro_id" placeholder="opcional" :class="[campo, 'w-64']">
             </div>
-            <button type="submit" class="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800">Filtrar</button>
+            <button type="submit" class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800">Filtrar</button>
             <button type="button" class="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50" @click="limpar">Limpar</button>
         </form>
 
         <div v-if="erro" role="alert" class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ erro }}</div>
 
-        <div class="mt-4 overflow-x-auto rounded-lg border border-slate-200 bg-white" :class="{ 'opacity-60': carregando }">
+        <div class="mt-4 overflow-x-auto cartao" :class="{ 'opacity-60': carregando }">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 text-xs text-slate-500">
                     <tr>
@@ -132,7 +132,7 @@ const campo = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm foc
                         </td>
                         <td class="px-4 py-2 whitespace-nowrap">{{ tituloDoEvento(r.evento) }}</td>
                         <td class="px-4 py-2">
-                            <RouterLink v-if="r.tipo === 'convenio'" :to="{ name: 'convenio', params: { id: r.registro_id } }" class="text-blue-700 hover:underline">
+                            <RouterLink v-if="r.tipo === 'convenio'" :to="{ name: 'convenio', params: { id: r.registro_id } }" class="text-brand-700 hover:underline">
                                 {{ tituloDoTipo(r.tipo) }}
                             </RouterLink>
                             <span v-else>{{ tituloDoTipo(r.tipo) }}</span>
@@ -140,7 +140,7 @@ const campo = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm foc
                         </td>
                         <td class="px-4 py-2">
                             <details v-if="alteracoes(r).length">
-                                <summary class="cursor-pointer text-blue-700">{{ alteracoes(r).length }} {{ alteracoes(r).length === 1 ? 'campo' : 'campos' }}</summary>
+                                <summary class="cursor-pointer text-brand-700">{{ alteracoes(r).length }} {{ alteracoes(r).length === 1 ? 'campo' : 'campos' }}</summary>
                                 <ul class="mt-1 space-y-0.5 text-xs">
                                     <li v-for="a in alteracoes(r)" :key="a.campo">
                                         <span class="font-medium">{{ a.campo }}:</span>

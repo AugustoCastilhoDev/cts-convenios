@@ -6,7 +6,7 @@
     <title>CTS Convênios</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased">
+<body class="bg-canvas text-slate-900 antialiased">
     <div id="app"></div>
 </body>
 </html>

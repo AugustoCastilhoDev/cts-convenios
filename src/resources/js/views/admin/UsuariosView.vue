@@ -79,17 +79,17 @@ onMounted(async () => {
     carregar();
 });
 
-const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none';
+const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 focus:outline-none';
 </script>
 
 <template>
     <div>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="text-xl font-semibold">Usuários</h1>
+                <h1 class="text-2xl font-semibold tracking-tight text-petroleo">Usuários</h1>
                 <p class="text-sm text-slate-500">Gestores e fiscais das prefeituras. Contas de administrador só se criam pelo servidor.</p>
             </div>
-            <button class="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800" @click="abrir()">Novo usuário</button>
+            <button class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800" @click="abrir()">Novo usuário</button>
         </div>
 
         <div class="mt-4 flex flex-wrap gap-3">
@@ -107,7 +107,7 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
 
         <div v-if="erro" role="alert" class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ erro }}</div>
 
-        <div class="mt-4 overflow-x-auto rounded-lg border border-slate-200 bg-white" :class="{ 'opacity-60': carregando }">
+        <div class="mt-4 overflow-x-auto cartao" :class="{ 'opacity-60': carregando }">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 text-xs text-slate-500">
                     <tr>
@@ -131,7 +131,7 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
                             </span>
                         </td>
                         <td class="px-4 py-2 text-right">
-                            <button class="text-blue-700 hover:underline" @click="abrir(u)">Editar</button>
+                            <button class="text-brand-700 hover:underline" @click="abrir(u)">Editar</button>
                         </td>
                     </tr>
                     <tr v-if="!usuarios.length && !carregando">

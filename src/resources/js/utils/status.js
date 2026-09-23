@@ -1,11 +1,11 @@
 // Ordem do fluxo de um convênio; as cores são strings completas para o Tailwind enxergá-las.
 export const statusConvenio = [
-    { status: 'proposta', titulo: 'Proposta', barra: 'bg-slate-400' },
-    { status: 'em_analise', titulo: 'Em Análise', barra: 'bg-amber-400' },
-    { status: 'aprovado', titulo: 'Aprovado', barra: 'bg-blue-500' },
-    { status: 'em_execucao', titulo: 'Em Execução', barra: 'bg-indigo-500' },
-    { status: 'prestacao_contas', titulo: 'Prestação de Contas', barra: 'bg-purple-500' },
-    { status: 'finalizado', titulo: 'Finalizado', barra: 'bg-green-500' },
+    { status: 'proposta', titulo: 'Proposta', barra: 'bg-slate-400', topo: 'border-t-slate-400' },
+    { status: 'em_analise', titulo: 'Em Análise', barra: 'bg-amber-400', topo: 'border-t-amber-400' },
+    { status: 'aprovado', titulo: 'Aprovado', barra: 'bg-blue-500', topo: 'border-t-blue-500' },
+    { status: 'em_execucao', titulo: 'Em Execução', barra: 'bg-indigo-500', topo: 'border-t-indigo-500' },
+    { status: 'prestacao_contas', titulo: 'Prestação de Contas', barra: 'bg-purple-500', topo: 'border-t-purple-500' },
+    { status: 'finalizado', titulo: 'Finalizado', barra: 'bg-green-500', topo: 'border-t-green-500' },
 ];
 
 export const statusContrato = [

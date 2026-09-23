@@ -37,7 +37,7 @@ async function salvar() {
     }
 }
 
-const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none';
+const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 focus:outline-none';
 </script>
 
 <template>
@@ -47,7 +47,7 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                 Senha alterada. Os outros dispositivos onde você estava conectado foram desconectados.
             </p>
             <div class="mt-6 flex justify-end">
-                <button class="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800" @click="emit('fechar')">Fechar</button>
+                <button class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800" @click="emit('fechar')">Fechar</button>
             </div>
         </div>
 
@@ -66,7 +66,7 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
 
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" class="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50" @click="emit('fechar')">Cancelar</button>
-                <button type="submit" :disabled="salvando" class="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-60">
+                <button type="submit" :disabled="salvando" class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60">
                     {{ salvando ? 'Salvando…' : 'Alterar senha' }}
                 </button>
             </div>

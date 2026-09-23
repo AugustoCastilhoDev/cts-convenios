@@ -54,16 +54,16 @@ onMounted(carregar);
     <div>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="text-xl font-semibold">Prefeituras</h1>
+                <h1 class="text-2xl font-semibold tracking-tight text-petroleo">Prefeituras</h1>
                 <p class="text-sm text-slate-500">Clientes da plataforma. Uma prefeitura desativada perde o acesso, mas mantém todo o histórico.</p>
             </div>
-            <button class="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800" @click="abrir()">Nova prefeitura</button>
+            <button class="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800" @click="abrir()">Nova prefeitura</button>
         </div>
 
         <div v-if="erro" role="alert" class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ erro }}</div>
         <p v-if="carregando" class="mt-6 text-sm text-slate-500">Carregando…</p>
 
-        <div v-else class="mt-4 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <div v-else class="mt-4 overflow-x-auto cartao">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 text-xs text-slate-500">
                     <tr>
@@ -87,8 +87,8 @@ onMounted(carregar);
                             </span>
                         </td>
                         <td class="px-4 py-2 text-right whitespace-nowrap">
-                            <RouterLink :to="{ name: 'admin-usuarios', query: { prefeitura: p.id } }" class="mr-3 text-blue-700 hover:underline">Usuários</RouterLink>
-                            <button class="mr-3 text-blue-700 hover:underline" @click="abrir(p)">Editar</button>
+                            <RouterLink :to="{ name: 'admin-usuarios', query: { prefeitura: p.id } }" class="mr-3 text-brand-700 hover:underline">Usuários</RouterLink>
+                            <button class="mr-3 text-brand-700 hover:underline" @click="abrir(p)">Editar</button>
                             <button :class="p.active ? 'text-red-700' : 'text-green-700'" class="hover:underline" @click="alternarSituacao(p)">
                                 {{ p.active ? 'Desativar' : 'Reativar' }}
                             </button>

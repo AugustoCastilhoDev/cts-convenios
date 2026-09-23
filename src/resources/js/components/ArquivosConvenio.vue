@@ -130,11 +130,11 @@ async function excluir(arquivo) {
 
 onMounted(() => carregar());
 
-const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none';
+const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 focus:outline-none';
 </script>
 
 <template>
-    <section class="mt-6 rounded-lg border border-slate-200 bg-white p-4">
+    <section class="mt-6 cartao p-4">
         <h2 class="font-semibold">Documentos</h2>
 
         <div v-if="erro" role="alert" class="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ erro }}</div>
@@ -159,7 +159,7 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                         <td class="py-2 pr-4 text-right whitespace-nowrap">{{ formatarTamanho(a.tamanho_bytes) }}</td>
                         <td class="py-2 pr-4 whitespace-nowrap">{{ new Date(a.created_at).toLocaleDateString('pt-BR') }}</td>
                         <td class="py-2 text-right whitespace-nowrap">
-                            <button :disabled="baixandoId === a.id" class="mr-3 text-blue-700 hover:underline disabled:opacity-60" @click="baixar(a)">
+                            <button :disabled="baixandoId === a.id" class="mr-3 text-brand-700 hover:underline disabled:opacity-60" @click="baixar(a)">
                                 {{ baixandoId === a.id ? 'Baixando…' : 'Baixar' }}
                             </button>
                             <button v-if="auth.podeExcluir" class="text-red-700 hover:underline" @click="excluir(a)">Excluir</button>
@@ -171,7 +171,7 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                 </tbody>
             </table>
 
-            <button v-if="paginaAtual < ultimaPagina" class="mt-3 text-sm text-blue-700 hover:underline" @click="carregar(paginaAtual + 1)">
+            <button v-if="paginaAtual < ultimaPagina" class="mt-3 text-sm text-brand-700 hover:underline" @click="carregar(paginaAtual + 1)">
                 Ver mais documentos
             </button>
         </div>
@@ -197,7 +197,7 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
             <button
                 type="submit"
                 :disabled="!arquivoEscolhido || enviando"
-                class="self-end rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50"
+                class="self-end rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
             >
                 {{ enviando ? 'Enviando…' : 'Enviar' }}
             </button>

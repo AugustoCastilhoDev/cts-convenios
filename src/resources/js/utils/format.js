@@ -56,3 +56,27 @@ export function formatarTamanho(bytes) {
 
     return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
 }
+
+/**
+ * Faixa colorida na lateral do cartão: quanto mais perto do vencimento, mais forte
+ * (mesma régua de situacaoPrazo). Convênios finalizados ou sem prazo ficam neutros.
+ */
+export function faixaDoPrazo(dias, status) {
+    if (status === 'finalizado' || dias === null || dias === undefined) {
+        return 'border-l-slate-300';
+    }
+
+    if (dias <= 15) {
+        return 'border-l-red-500';
+    }
+
+    if (dias <= 30) {
+        return 'border-l-orange-500';
+    }
+
+    if (dias <= 90) {
+        return 'border-l-amber-400';
+    }
+
+    return 'border-l-emerald-500';
+}
