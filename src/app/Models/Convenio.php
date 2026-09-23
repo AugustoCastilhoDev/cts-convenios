@@ -58,6 +58,11 @@ class Convenio extends Model implements AuditableContract
         return $this->hasMany(ContratoVinculado::class);
     }
 
+    public function alertas(): HasMany
+    {
+        return $this->hasMany(AlertaPrazo::class);
+    }
+
     public function arquivos(): HasMany
     {
         return $this->hasMany(ArquivoConvenio::class);

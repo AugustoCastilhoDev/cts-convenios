@@ -9,6 +9,8 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
+    # Tag própria: queue-worker e scheduler reaproveitam esta mesma imagem.
+    image: cts-convenios-app
     container_name: cts_app_server
     restart: unless-stopped
     working_dir: /var/www/html
@@ -22,6 +24,54 @@ services:
     # testes ignoravam o SQLite do phpunit.xml e rodavam contra o Postgres
     # de desenvolvimento de verdade.
     depends_on:
+      database:
+        condition: service_healthy
+      cache-workers:
+        condition: service_healthy
+    networks:
+      - cts_network
+
+  # ------------------------------------------------------------------------
+  # queue-worker: consome a fila Redis (envio dos alertas de prazo).
+  # --max-time reinicia o processo a cada hora (restart: unless-stopped),
+  # o que também recarrega o código alterado; após mudar um Job em dev,
+  # rode `docker compose restart queue-worker` para valer na hora.
+  # ------------------------------------------------------------------------
+  queue-worker:
+    image: cts-convenios-app
+    pull_policy: never
+    container_name: cts_queue_worker
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--timeout=90", "--max-time=3600"]
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      app-server:
+        condition: service_started
+      database:
+        condition: service_healthy
+      cache-workers:
+        condition: service_healthy
+    networks:
+      - cts_network
+
+  # ------------------------------------------------------------------------
+  # scheduler: executa o Laravel Scheduler (varredura diária do Motor de
+  # Alertas às 07:00 America/Sao_Paulo, ver routes/console.php).
+  # ------------------------------------------------------------------------
+  scheduler:
+    image: cts-convenios-app
+    pull_policy: never
+    container_name: cts_scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      app-server:
+        condition: service_started
       database:
         condition: service_healthy
       cache-workers:

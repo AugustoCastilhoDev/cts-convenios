@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AlertaPrazoController;
 use App\Http\Controllers\Api\ArquivoConvenioController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContratoVinculadoController;
@@ -33,6 +34,8 @@ Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
         Route::post('/{convenio}/contratos', [ContratoVinculadoController::class, 'store']);
         Route::get('/{convenio}/contratos/{contrato}', [ContratoVinculadoController::class, 'show']);
         Route::put('/{convenio}/contratos/{contrato}', [ContratoVinculadoController::class, 'update']);
+
+        Route::get('/{convenio}/alertas', [AlertaPrazoController::class, 'index']);
 
         Route::get('/{convenio}/arquivos', [ArquivoConvenioController::class, 'index']);
         Route::post('/{convenio}/arquivos', [ArquivoConvenioController::class, 'store']);

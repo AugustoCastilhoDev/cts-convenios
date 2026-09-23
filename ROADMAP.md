@@ -66,24 +66,31 @@
 - **Bugs de auditoria encontrados e corrigidos:** (1) o resolver do pacote só consultava os guards `web`/`api`, então toda auditoria HTTP gravava `user_id` nulo — adicionado `sanctum` em `config/audit.php`; (2) `audits.auditable_id` era `uuid`, mas `users.id` é bigint, o que dava 500 ao auditar um User no Postgres — migration muda a coluna para `string(36)`.
 - 14 testes novos (47 no total, todos passando) + smoke test HTTP real em Postgres.
 
+### Motor de Alertas de prazo — Módulo 3 (2026-09-23)
+- **Prazos monitorados:** fim da vigência e prazo de prestação de contas (o que leva ao CADIN). Régua 90/60/30/15 dias + aviso único de "prazo vencido" (janela de 30 dias após o prazo). Tudo em `config/alertas.php`.
+- **Varredura diária** `alertas:processar` (07:00 America/Sao_Paulo, `withoutOverlapping` + `onOneServer`), com `--dry-run` que lista sem gravar. `AlertaPrazoService` faz a lógica; `EnviarAlertaPrazo` (job na fila Redis, 4 tentativas com backoff, `ShouldBeUnique`) envia o e-mail Markdown `AlertaPrazoConvenio`.
+- **Idempotência:** tabela `alertas_prazo` (única por convênio + tipo + data do prazo + marco). Agendador parado não perde alerta (sai no marco mais próximo); prazo alterado reinicia a régua; alerta obsoleto (prazo mudou/convênio finalizado antes do envio) é cancelado, não enviado; sem destinatários fica pendente e sai quando houver alguém.
+- **Destinatários:** Gestores e Fiscais ativos da prefeitura. Prefeitura inativa é ignorada. Vigência não alerta em "Prestação de Contas"; "Finalizado" nunca alerta.
+- **Histórico:** `GET /convenios/{convenio}/alertas` (somente leitura; quem vê o convênio vê os alertas).
+- **Docker:** novos serviços `queue-worker` e `scheduler` (mesma imagem `cts-convenios-app`). Depois de mudar um Job em dev: `docker compose restart queue-worker`.
+- **Segurança em dev:** `ALERTAS_REDIRECIONAR_PARA` (em `src/.env`) desvia TODOS os alertas para um e-mail só e marca o assunto com `[TESTE]` — os dados de teste têm e-mails fictícios e enviar para eles queima a reputação do domínio. **Em produção deve ficar vazio.**
+- 29 testes novos (77 no total) + teste real de ponta a ponta (worker enviou os 2 alertas, 2ª execução não duplicou).
+
 ## Pendências conhecidas (não esquecidas, só adiadas)
 
 - [ ] Administrador Interno não consegue trocar a própria senha pela API (só recriando via console); avaliar endpoint de "minha conta" quando o front-end existir.
+- [ ] Alertas por WhatsApp (gateway a definir) — só o canal de e-mail existe hoje.
+- [ ] Fuso horário: `APP_TIMEZONE` está em UTC; o Motor usa `America/Sao_Paulo` explícito, mas o accessor `Convenio::dias_para_vencimento` usa `now()` (UTC) e pode errar 1 dia à noite. Decidir se troca o `APP_TIMEZONE` (afeta como timestamps são gravados) ou ajusta o accessor.
 - [ ] E-mail em produção: hoje envia via Resend com domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev. Ao registrar o domínio do CTS: verificar no Resend, trocar `MAIL_FROM_ADDRESS`, DMARC em `p=quarantine` após estabilizar, e testar entrega em caixas institucionais (`.gov.br`, Outlook), pois o primeiro teste caiu em spam no Gmail (reputação de domínio novo + texto puro; SPF/DKIM/DMARC estavam corretos).
 
 ## Próximos passos (em ordem sugerida)
 
-1. **Motor de Alertas (Módulo 3 — o diferencial do produto)**:
-   - Job agendado (Laravel Scheduler) varrendo `convenios.data_vigencia_fim` diariamente.
-   - Régua de 90/60/30/15 dias.
-   - Notificações por e-mail (precisa do SMTP configurado antes) e WhatsApp (gateway a definir).
-   - Fila via Redis (`QUEUE_CONNECTION=redis` já configurado).
-2. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)**:
+1. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)**:
    - Kanban de convênios por status.
    - Dashboard com indicadores financeiros (saldo disponível já vem pronto da API).
    - Tela de repositório de arquivos.
-3. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
-4. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
+2. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
+3. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
 
 ## Armadilhas conhecidas (para não repetir)
 
