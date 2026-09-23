@@ -5,6 +5,7 @@ import { api, ApiError } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 import { formatarMoeda, formatarData, situacaoPrazo } from '../utils/format';
 import { statusContrato } from '../utils/status';
+import ArquivosConvenio from '../components/ArquivosConvenio.vue';
 import ConvenioFormModal from '../components/ConvenioFormModal.vue';
 
 const route = useRoute();
@@ -275,6 +276,8 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                     </button>
                 </form>
             </section>
+
+            <ArquivosConvenio :convenio-id="convenio.id" />
 
             <section class="mt-6 rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="font-semibold">Histórico de alertas</h2>

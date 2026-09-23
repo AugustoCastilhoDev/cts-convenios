@@ -80,6 +80,26 @@ async function request(method, path, { body, params } = {}) {
     return data;
 }
 
+/**
+ * Baixa um arquivo protegido: o navegador não anexa o Bearer token a um link
+ * comum, então buscamos o conteúdo com fetch e entregamos como Blob.
+ */
+export async function baixarBlob(path) {
+    const response = await fetch(new URL(`/api${path}`, window.location.origin), {
+        headers: { Accept: '*/*', Authorization: `Bearer ${tokenStorage.get()}` },
+    });
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            onUnauthorized();
+        }
+        const data = await response.json().catch(() => null);
+        throw new ApiError(response.status, data);
+    }
+
+    return response.blob();
+}
+
 export const api = {
     get: (path, params) => request('GET', path, { params }),
     post: (path, body) => request('POST', path, { body }),

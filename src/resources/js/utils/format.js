@@ -44,3 +44,15 @@ export function situacaoPrazo(dias) {
 
     return { texto, classes: 'bg-slate-100 text-slate-600' };
 }
+
+export function formatarTamanho(bytes) {
+    if (bytes < 1024) {
+        return `${bytes} B`;
+    }
+
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(0)} KB`;
+    }
+
+    return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+}
