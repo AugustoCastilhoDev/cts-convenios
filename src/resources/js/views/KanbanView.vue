@@ -3,18 +3,12 @@ import { computed, onMounted, ref } from 'vue';
 import { api, ApiError } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 import { formatarMoeda, formatarData, situacaoPrazo } from '../utils/format';
+import { statusConvenio } from '../utils/status';
+import ConvenioFormModal from '../components/ConvenioFormModal.vue';
 
 const auth = useAuthStore();
 
-// Ordem do fluxo de um convênio; as cores são strings completas para o Tailwind enxergá-las.
-const colunas = [
-    { status: 'proposta', titulo: 'Proposta', barra: 'bg-slate-400' },
-    { status: 'em_analise', titulo: 'Em Análise', barra: 'bg-amber-400' },
-    { status: 'aprovado', titulo: 'Aprovado', barra: 'bg-blue-500' },
-    { status: 'em_execucao', titulo: 'Em Execução', barra: 'bg-indigo-500' },
-    { status: 'prestacao_contas', titulo: 'Prestação de Contas', barra: 'bg-purple-500' },
-    { status: 'finalizado', titulo: 'Finalizado', barra: 'bg-green-500' },
-];
+const colunas = statusConvenio.map((s) => ({ status: s.status, titulo: s.titulo, barra: s.barra }));
 
 const convenios = ref([]);
 const carregando = ref(true);
@@ -22,6 +16,7 @@ const erro = ref('');
 const busca = ref('');
 const arrastando = ref(null);
 const sobreColuna = ref(null);
+const criando = ref(false);
 
 const porColuna = computed(() => {
     const termo = busca.value.trim().toLowerCase();
@@ -95,6 +90,11 @@ async function soltar(status) {
     }
 }
 
+function convenioCriado() {
+    criando.value = false;
+    carregar();
+}
+
 onMounted(carregar);
 </script>
 
@@ -108,12 +108,21 @@ onMounted(carregar);
                     <template v-if="auth.podeEditar"> · arraste um card para mudar a etapa</template>
                 </p>
             </div>
+            <div class="flex w-full items-center gap-3 sm:w-auto">
             <input
                 v-model="busca"
                 type="search"
                 placeholder="Buscar por número, objeto ou órgão"
                 class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm sm:w-72 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
             >
+            <button
+                v-if="auth.podeEditar"
+                class="shrink-0 rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+                @click="criando = true"
+            >
+                Novo convênio
+            </button>
+            </div>
         </div>
 
         <div v-if="erro" role="alert" class="mt-4 flex items-start justify-between rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -127,7 +136,7 @@ onMounted(carregar);
             <section
                 v-for="coluna in colunas"
                 :key="coluna.status"
-                class="w-72 shrink-0 rounded-lg bg-slate-100 transition-colors"
+                class="min-w-60 flex-1 rounded-lg bg-slate-100 transition-colors"
                 :class="{ 'ring-2 ring-blue-500': sobreColuna === coluna.status }"
                 @dragover.prevent="sobreColuna = coluna.status"
                 @dragleave="sobreColuna = null"
@@ -152,7 +161,11 @@ onMounted(carregar);
                         @dragend="finalizarArraste"
                     >
                         <div class="flex items-start justify-between gap-2">
-                            <h3 class="text-sm font-semibold">{{ c.numero_convenio }}</h3>
+                            <h3 class="text-sm font-semibold">
+                                <RouterLink :to="{ name: 'convenio', params: { id: c.id } }" class="hover:text-blue-700 hover:underline" draggable="false">
+                                    {{ c.numero_convenio }}
+                                </RouterLink>
+                            </h3>
                             <span
                                 v-if="c.status !== 'finalizado' && situacaoPrazo(c.dias_para_vencimento)"
                                 class="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium"
@@ -184,5 +197,7 @@ onMounted(carregar);
                 </div>
             </section>
         </div>
+
+        <ConvenioFormModal v-if="criando" @salvo="convenioCriado" @fechar="criando = false" />
     </div>
 </template>

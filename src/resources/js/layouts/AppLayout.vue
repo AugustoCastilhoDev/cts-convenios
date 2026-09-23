@@ -14,7 +14,7 @@ async function sair() {
 <template>
     <div class="min-h-screen">
         <header class="border-b border-slate-200 bg-white">
-            <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+            <div class="mx-auto flex h-14 max-w-[1600px] items-center justify-between px-4">
                 <div class="flex items-center gap-8">
                     <span class="font-semibold tracking-tight">CTS Convênios</span>
                     <nav class="flex gap-4 text-sm">
@@ -37,7 +37,7 @@ async function sair() {
             </div>
         </header>
 
-        <main class="mx-auto max-w-7xl px-4 py-6">
+        <main class="mx-auto max-w-[1600px] px-4 py-6">
             <RouterView />
         </main>
     </div>

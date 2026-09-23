@@ -18,6 +18,11 @@ const routes = [
                 name: 'kanban',
                 component: () => import('../views/KanbanView.vue'),
             },
+            {
+                path: 'convenios/:id',
+                name: 'convenio',
+                component: () => import('../views/ConvenioDetalheView.vue'),
+            },
         ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },

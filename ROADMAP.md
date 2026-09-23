@@ -81,6 +81,7 @@
 - SPA em `src/resources/js` (Vue 3 + Vue Router + Pinia + Tailwind 4), servida por um shell Blade (`resources/views/app.blade.php`) com rota catch-all em `routes/web.php` (tudo fora de `/api/*` cai no Vue Router).
 - Cliente HTTP em `services/api.js` (fetch + Bearer token do Sanctum guardado em `localStorage`; 401 derruba a sessão e volta ao login).
 - Tela de login, layout autenticado e **Kanban** de convênios por etapa com arrastar e soltar (só para quem pode editar; atualização otimista com rollback se a API recusar).
+- **Detalhe do convênio** (`/convenios/:id`): resumo financeiro, prazos, contratos vinculados (com cadastro inline) e histórico de alertas; **formulário de criar/editar** convênio em modal (erros de validação por campo). Kanban ganhou o botão "Novo convênio" e o número do card é link para o detalhe.
 - O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
 
 ## Pendências conhecidas (não esquecidas, só adiadas)
@@ -89,10 +90,14 @@
 - [ ] Alertas por WhatsApp: decisão (2026-09-23) de usar só e-mail por enquanto, sem plataforma de WhatsApp contratada. Retomar quando houver gateway; o Motor já separa a geração do alerta (`AlertaPrazoService`) do envio (`EnviarAlertaPrazo`), então um novo canal entra como outro job/notificação.
 - [ ] E-mail em produção: hoje envia via Resend com domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev. Ao registrar o domínio do CTS: verificar no Resend, trocar `MAIL_FROM_ADDRESS`, DMARC em `p=quarantine` após estabilizar, e testar entrega em caixas institucionais (`.gov.br`, Outlook), pois o primeiro teste caiu em spam no Gmail (reputação de domínio novo + texto puro; SPF/DKIM/DMARC estavam corretos).
 
+## Pendências do front-end
+- Administrador Interno não consegue criar convênio pela tela (a API exige `tenant_id` para ele e o formulário não tem seletor de prefeitura). Os usuários reais (Gestor/Fiscal) não são afetados.
+- Contratos: só há cadastro; editar contrato existente (a API já tem PUT) ainda não tem tela.
+- Layout de tablet/celular do Kanban não foi refinado (rola na horizontal).
+
 ## Próximos passos (em ordem sugerida)
 
-1. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)** — base, login e Kanban prontos; falta:
-   - Detalhe do convênio (contratos vinculados, histórico de alertas) e formulário de criar/editar convênio.
+1. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)** — base, login, Kanban, detalhe e formulário prontos; falta:
    - Dashboard com indicadores financeiros (saldo disponível já vem pronto da API).
    - Tela de repositório de arquivos (upload/download).
 2. **Auditoria/relatórios para o Fiscal de Controle Interno**: endpoint de exportação (a ability `export` já existe na `ConvenioPolicy`, falta o Controller/formato de exportação — CSV/PDF).
