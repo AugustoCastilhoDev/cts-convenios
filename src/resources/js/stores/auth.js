@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', {
 
     getters: {
         isAuthenticated: (state) => state.token !== null,
+        isAdmin: (state) => state.user?.role === 'administrador_interno',
         // Só o Administrador Interno apaga registros (ArquivoConvenioPolicy::delete e ConvenioPolicy::delete).
         podeExcluir: (state) => state.user?.role === 'administrador_interno',
         // Quem pode alterar convênios (espelha ConvenioPolicy::create/update).

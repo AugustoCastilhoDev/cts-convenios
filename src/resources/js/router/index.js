@@ -24,6 +24,24 @@ const routes = [
                 component: () => import('../views/KanbanView.vue'),
             },
             {
+                path: 'admin/prefeituras',
+                name: 'admin-prefeituras',
+                component: () => import('../views/admin/PrefeiturasView.vue'),
+                meta: { requiresAdmin: true },
+            },
+            {
+                path: 'admin/usuarios',
+                name: 'admin-usuarios',
+                component: () => import('../views/admin/UsuariosView.vue'),
+                meta: { requiresAdmin: true },
+            },
+            {
+                path: 'admin/auditoria',
+                name: 'admin-auditoria',
+                component: () => import('../views/admin/AuditoriaView.vue'),
+                meta: { requiresAdmin: true },
+            },
+            {
                 path: 'convenios/:id',
                 name: 'convenio',
                 component: () => import('../views/ConvenioDetalheView.vue'),
@@ -57,6 +75,11 @@ router.beforeEach(async (to) => {
             auth.clear();
             return { name: 'login' };
         }
+    }
+
+    // Telas de administração: o servidor também barra (403), isto só evita mostrar uma tela vazia.
+    if (to.meta.requiresAdmin && !auth.isAdmin) {
+        return { name: 'dashboard' };
     }
 });
 

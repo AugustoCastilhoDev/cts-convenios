@@ -86,27 +86,28 @@
 - **Painel (dashboard)** em `/` (tela inicial após o login) alimentado por `GET /api/dashboard` (`DashboardService`, escopo por prefeitura): convênios em andamento, valor da carteira, contratado (% da carteira), saldo disponível, alerta de convênios com contratos acima do valor disponível, convênios por etapa, prazos críticos (vencidos + próximos 90 dias, mesmas regras do Motor de Alertas) e contratos por situação de execução. "Carteira" = convênios não finalizados. O Kanban passou para `/convenios`.
 - **Documentos do convênio** (seção no detalhe): lista com tipo, tamanho e data; envio com tipo do documento (só Gestor/admin; validação prévia de extensão e 20 MB no navegador, a do servidor continua valendo); download autenticado (busca o arquivo com o token e entrega como Blob, pois link comum não leva o Bearer); botão Excluir só para o Administrador Interno, com confirmação; "Ver mais" quando passa de 15 arquivos.
 - **Exportação para o Fiscal** (`RelatorioConvenioService`, pacote `barryvdh/laravel-dompdf`): `GET /api/convenios/exportar?formato=csv|pdf` (carteira; aceita `status` e `busca`) e `GET /api/convenios/{id}/ficha` (PDF completo: dados, financeiro, contratos, documentos, alertas e trilha de auditoria). CSV em UTF-8 com BOM, separador `;` e vírgula decimal (abre direto no Excel pt-BR) e proteção contra injeção de fórmula; PDFs com subconjunto de fontes (~25 KB). Quem vê o convênio exporta, sempre dentro da própria prefeitura; cada exportação vai para o log (`Relatório exportado`, com user_id). Na tela: botão "Exportar carteira" no Kanban e "Relatório → Ficha completa" no detalhe. O `Convenio::filtrar()` é o filtro único da listagem e da exportação.
+- **Painel do Administrador Interno** (menu visível só para o admin; as rotas `/admin/*` são barradas para os demais):
+  - **Prefeituras**: cadastro/edição/desativação (`POST/PUT /api/tenants`; CNPJ validado pelos dígitos verificadores e guardado com máscara, sem duplicar; cadastros antigos com CNPJ fictício continuam editáveis; sem exclusão — desativar preserva o histórico e derruba o acesso dos usuários na hora). Listagem com contagem de usuários/convênios (`GET /api/tenants?todas=1`).
+  - **Usuários**: lista com filtros (prefeitura, papel, busca), criação do primeiro Gestor/Fiscal de uma prefeitura, edição, ativar/desativar e troca de senha (usa a API `/api/users` já existente).
+  - **Auditoria** (`GET /api/audits`, só admin, `AuditPolicy`): filtros por tipo de registro, evento, período e ID; mostra quem, quando, IP e o antes/depois de cada campo; senhas nunca são registradas. O detalhe do convênio ganhou "Ver auditoria" (abre filtrado) e "Excluir" (só admin, com confirmação; exclusão lógica).
+  - **Alterar senha** (`PUT /api/me/password`, qualquer perfil): exige a senha atual e desconecta os outros dispositivos — resolve a antiga pendência do admin.
 - O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
 
 ## Pendências conhecidas (não esquecidas, só adiadas)
 
-- [ ] Administrador Interno não consegue trocar a própria senha pela API (só recriando via console); avaliar endpoint de "minha conta" quando o front-end existir.
 - [ ] Alertas por WhatsApp: decisão (2026-09-23) de usar só e-mail por enquanto, sem plataforma de WhatsApp contratada. Retomar quando houver gateway; o Motor já separa a geração do alerta (`AlertaPrazoService`) do envio (`EnviarAlertaPrazo`), então um novo canal entra como outro job/notificação.
 - [ ] E-mail em produção: hoje envia via Resend com domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev. Ao registrar o domínio do CTS: verificar no Resend, trocar `MAIL_FROM_ADDRESS`, DMARC em `p=quarantine` após estabilizar, e testar entrega em caixas institucionais (`.gov.br`, Outlook), pois o primeiro teste caiu em spam no Gmail (reputação de domínio novo + texto puro; SPF/DKIM/DMARC estavam corretos).
 
 ## Próximos passos (em ordem sugerida)
 
-O front-end do Módulo 2 (Kanban, painel, detalhe, contratos e documentos) está completo. Refinamentos possíveis depois: testes automatizados do front-end (Vitest) e ajustes visuais.
+O front-end do Módulo 2 (Kanban, painel, detalhe, contratos e documentos), a exportação do Fiscal e o painel do Administrador estão completos. Refinamentos possíveis depois: testes automatizados do front-end (Vitest) e ajustes visuais.
 
-1. **Painel do Administrador Interno** (antes de vender para a 2ª prefeitura; hoje isso só é possível por API/comandos):
-   - Cadastro/edição/desativação de prefeituras (a `TenantPolicy` já restringe ao admin; falta Controller de escrita — hoje só existe `GET /api/tenants`).
-   - Gestão de usuários por prefeitura (a API `/api/users` já existe; falta a tela) e criação do primeiro Gestor de uma prefeitura nova.
-   - Exclusão de convênio lançado por engano (a API `DELETE /api/convenios/{id}` já existe só para o admin; falta botão com confirmação).
-   - Consulta da trilha de auditoria (`audits`) por prefeitura/convênio.
-   - Trocar a própria senha (pendência conhecida: hoje o admin não consegue pela API).
-2. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
+1. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
 
 ## Armadilhas conhecidas (para não repetir)
+
+- **Testes com token no mesmo processo**: depois de um login (`Auth::once`) o Sanctum trata a chamada seguinte como sessão (token transitório), e depois de uma chamada por token o guard padrão vira `sanctum` e quebra o login seguinte. Em teste, chame `$this->app['auth']->forgetGuards()` (e `shouldUse('web')` antes de um login) entre elas. Em produção cada requisição é um processo novo, então não ocorre.
+- **Python com barras invertidas no shell**: scripts `python - <<EOF` que editam PHP perdem as `\` de namespaces (viram erro de escape). Para editar arquivos PHP use a ferramenta Edit/Write, não Python inline.
 
 - **BuildKit quebra com acento no caminho** (`CTS Convênios`). Sempre use `DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0` antes de `docker compose build`.
 - **Git Bash converte paths absolutos Linux** em comandos `docker`/`docker compose exec`. Use `MSYS_NO_PATHCONV=1` quando o comando incluir um path tipo `/var/www/html`.

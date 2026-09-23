@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 import { formatarMoeda, formatarData, situacaoPrazo } from '../utils/format';
@@ -10,6 +10,7 @@ import BotaoExportar from '../components/BotaoExportar.vue';
 import ConvenioFormModal from '../components/ConvenioFormModal.vue';
 
 const route = useRoute();
+const router = useRouter();
 const auth = useAuthStore();
 
 const convenio = ref(null);
@@ -107,6 +108,21 @@ async function salvarEdicao() {
     }
 }
 
+async function excluirConvenio() {
+    const aviso = `Excluir o convênio ${convenio.value.numero_convenio}? Ele sai das listas e relatórios; a trilha de auditoria é preservada.`;
+
+    if (!window.confirm(aviso)) {
+        return;
+    }
+
+    try {
+        await api.delete(`/convenios/${convenio.value.id}`);
+        router.push({ name: 'kanban' });
+    } catch (e) {
+        erro.value = `Não foi possível excluir o convênio: ${e.message}`;
+    }
+}
+
 function convenioSalvo() {
     editando.value = false;
     carregar();
@@ -148,6 +164,20 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                     >
                         Editar
                     </button>
+                    <template v-if="auth.isAdmin">
+                        <RouterLink
+                            :to="{ name: 'admin-auditoria', query: { tipo: 'convenio', registro_id: convenio.id } }"
+                            class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50"
+                        >
+                            Ver auditoria
+                        </RouterLink>
+                        <button
+                            class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+                            @click="excluirConvenio"
+                        >
+                            Excluir
+                        </button>
+                    </template>
                 </div>
             </header>
 
