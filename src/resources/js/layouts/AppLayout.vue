@@ -18,6 +18,9 @@ async function sair() {
                 <div class="flex items-center gap-8">
                     <span class="font-semibold tracking-tight">CTS Convênios</span>
                     <nav class="flex gap-4 text-sm">
+                        <RouterLink :to="{ name: 'dashboard' }" class="text-slate-600 hover:text-slate-900" exact-active-class="font-medium text-slate-900">
+                            Painel
+                        </RouterLink>
                         <RouterLink :to="{ name: 'kanban' }" class="text-slate-600 hover:text-slate-900" active-class="font-medium text-slate-900">
                             Convênios
                         </RouterLink>

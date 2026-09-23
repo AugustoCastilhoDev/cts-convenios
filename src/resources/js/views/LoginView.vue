@@ -17,7 +17,7 @@ async function entrar() {
 
     try {
         await auth.login(form.email, form.password);
-        router.push({ name: 'kanban' });
+        router.push({ name: 'dashboard' });
     } catch (e) {
         erro.value = e instanceof ApiError
             ? (Object.values(e.errors)[0]?.[0] ?? e.message)

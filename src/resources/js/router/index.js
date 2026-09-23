@@ -15,6 +15,11 @@ const routes = [
         children: [
             {
                 path: '',
+                name: 'dashboard',
+                component: () => import('../views/DashboardView.vue'),
+            },
+            {
+                path: 'convenios',
                 name: 'kanban',
                 component: () => import('../views/KanbanView.vue'),
             },
@@ -41,7 +46,7 @@ router.beforeEach(async (to) => {
     }
 
     if (to.meta.guest && auth.isAuthenticated) {
-        return { name: 'kanban' };
+        return { name: 'dashboard' };
     }
 
     // Token guardado, mas usuário ainda não carregado (recarregou a página).

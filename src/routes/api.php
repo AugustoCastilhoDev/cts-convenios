@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\ArquivoConvenioController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContratoVinculadoController;
 use App\Http\Controllers\Api\ConvenioController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,8 @@ Route::post('/logout', [AuthController::class, 'logout']);
 // tokens ainda válidos de contas desativadas.
 Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::get('/tenants', [TenantController::class, 'index']);
 

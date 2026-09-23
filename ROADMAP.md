@@ -83,6 +83,7 @@
 - Tela de login, layout autenticado e **Kanban** de convênios por etapa com arrastar e soltar (só para quem pode editar; atualização otimista com rollback se a API recusar).
 - **Detalhe do convênio** (`/convenios/:id`): resumo financeiro, prazos, contratos vinculados (com cadastro inline) e histórico de alertas; **formulário de criar/editar** convênio em modal (erros de validação por campo). Kanban ganhou o botão "Novo convênio" e o número do card é link para o detalhe.
 - Pendências do front-end resolvidas: Administrador Interno escolhe a prefeitura ao criar convênio (novo `GET /api/tenants`, só admin); contratos editáveis na própria linha da tabela; Kanban com rolagem por encaixe no celular e seletor "Mover para…" em cada card (o arrastar do HTML5 não funciona em toque).
+- **Painel (dashboard)** em `/` (tela inicial após o login) alimentado por `GET /api/dashboard` (`DashboardService`, escopo por prefeitura): convênios em andamento, valor da carteira, contratado (% da carteira), saldo disponível, alerta de convênios com contratos acima do valor disponível, convênios por etapa, prazos críticos (vencidos + próximos 90 dias, mesmas regras do Motor de Alertas) e contratos por situação de execução. "Carteira" = convênios não finalizados. O Kanban passou para `/convenios`.
 - O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
 
 ## Pendências conhecidas (não esquecidas, só adiadas)
@@ -94,7 +95,6 @@
 ## Próximos passos (em ordem sugerida)
 
 1. **Front-end Vue.js 3 + TailwindCSS (Módulo 2)** — base, login, Kanban, detalhe e formulário prontos; falta:
-   - Dashboard com indicadores financeiros (saldo disponível já vem pronto da API).
    - Tela de repositório de arquivos (upload/download).
 2. **Painel do Administrador Interno** (antes de vender para a 2ª prefeitura; hoje isso só é possível por API/comandos):
    - Cadastro/edição/desativação de prefeituras (a `TenantPolicy` já restringe ao admin; falta Controller de escrita — hoje só existe `GET /api/tenants`).
@@ -115,7 +115,7 @@
 - **O SQLite dos testes não valida tipos de coluna** (ex.: gravar `24` numa coluna `uuid` passa). Mudanças que envolvam auditoria, chaves ou tipos precisam de um smoke test HTTP real contra o Postgres — foi assim que os 2 bugs de auditoria acima apareceram.
 - **`owen-it/laravel-auditing` não audita nada rodado via `artisan`/`tinker`/seeders** por padrão (`audit.console => false`) — isso é proposital do pacote, não bug. Só audita requisições HTTP reais.
 
-- **Cache do PHP em dev (opcache)**: no Windows a pasta compartilhada com o Docker é lenta e conferir os arquivos a cada requisição custava ~2 s por página. Hoje `opcache.revalidate_freq = 30` (em `docker/php/php.ini`): as requisições levam ~0,2 s, mas uma edição em PHP pode levar até 30 s para valer **nas chamadas HTTP** (o artisan/testes não são afetados). Para valer na hora: `docker compose exec app-server kill -USR2 1`. Em produção, usar `validate_timestamps = 0`.
+- **Cache do PHP em dev (opcache)**: no Windows a pasta compartilhada com o Docker é lenta e conferir os arquivos a cada requisição custava ~2 s por página. Hoje `opcache.revalidate_freq = 30` (em `docker/php/php.ini`): as requisições levam ~0,2 s, mas uma edição em PHP pode levar até 30 s para valer **nas chamadas HTTP** (o artisan/testes não são afetados). Para valer na hora: `docker compose restart app-server` (o `kill` não existe na imagem). Em produção, usar `validate_timestamps = 0`.
 
 ## Comandos essenciais para retomar
 
