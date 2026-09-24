@@ -52,7 +52,8 @@ const routes = [
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
+    // O sistema mora em /app (a landing page pública fica em /).
+    history: createWebHistory('/app/'),
     routes,
 });
 

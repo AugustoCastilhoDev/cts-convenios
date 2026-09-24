@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AlertaPrazoController;
 use App\Http\Controllers\Api\ArquivoConvenioController;
 use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ContatoController;
 use App\Http\Controllers\Api\ContratoVinculadoController;
 use App\Http\Controllers\Api\ConvenioController;
 use App\Http\Controllers\Api\DashboardController;
@@ -14,6 +15,9 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+
+// Formulário da landing page (público).
+Route::post('/contato', [ContatoController::class, 'store'])->middleware('throttle:contato');
 Route::post('/logout', [AuthController::class, 'logout']);
 
 // Tudo abaixo exige conta ativa (usuário e prefeitura): o middleware barra
