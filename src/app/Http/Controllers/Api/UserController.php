@@ -9,6 +9,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserService;
+use App\Support\Paginacao;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -38,7 +39,7 @@ class UserController extends Controller
                     ->orWhereLike('email', '%'.$request->string('busca').'%')
             ))
             ->orderBy('name')
-            ->paginate($request->integer('por_pagina', 15));
+            ->paginate(Paginacao::porPagina($request, 15));
 
         return UserResource::collection($usuarios);
     }

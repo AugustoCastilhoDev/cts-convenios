@@ -8,6 +8,7 @@ use App\Http\Requests\Convenio\UpdateConvenioRequest;
 use App\Http\Resources\ConvenioResource;
 use App\Models\Convenio;
 use App\Services\ConvenioService;
+use App\Support\Paginacao;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -26,7 +27,7 @@ class ConvenioController extends Controller
             ->withSum('contratosVinculados as total_contratado', 'valor_contratado')
             ->filtrar($request->input('status'), $request->input('busca'))
             ->orderByDesc('data_vigencia_fim')
-            ->paginate($request->integer('por_pagina', 15));
+            ->paginate(Paginacao::porPagina($request, 15));
 
         return ConvenioResource::collection($convenios);
     }

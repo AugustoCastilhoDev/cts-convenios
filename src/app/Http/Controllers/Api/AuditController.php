@@ -10,6 +10,7 @@ use App\Models\ContratoVinculado;
 use App\Models\Convenio;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Paginacao;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
@@ -50,7 +51,7 @@ class AuditController extends Controller
             ->when($filtros['ate'] ?? null, fn ($query, $data) => $query->where('created_at', '<=', $data.' 23:59:59'))
             ->latest('created_at')
             ->latest('id')
-            ->paginate($request->integer('por_pagina', 25));
+            ->paginate(Paginacao::porPagina($request, 25));
 
         return AuditResource::collection($auditorias);
     }

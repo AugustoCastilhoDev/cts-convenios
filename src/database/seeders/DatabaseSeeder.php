@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,6 +19,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Estes usuários têm a senha "password": em produção seriam uma porta aberta.
+        // O administrador real nasce com `php artisan admin:criar`; as prefeituras e
+        // seus usuários, pelo painel do administrador.
+        if (app()->isProduction()) {
+            throw new RuntimeException('DatabaseSeeder cria dados fictícios com senha fraca e não pode rodar em produção.');
+        }
+
         $tenant = Tenant::create([
             'razao_social' => 'Prefeitura Municipal de Exemplópolis (dados fictícios)',
             'cnpj' => '00.000.000/0001-00',

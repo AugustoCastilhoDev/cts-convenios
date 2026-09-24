@@ -50,7 +50,9 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Sessão de trabalho de 12 h (uma jornada): passado isso, o token deixa de valer e a
+    // tela volta ao login. Antes ficava sem validade, o que deixaria um token vazado útil para sempre.
+    'expiration' => (int) env('SANCTUM_EXPIRATION_MINUTOS', 720),
 
     /*
     |--------------------------------------------------------------------------

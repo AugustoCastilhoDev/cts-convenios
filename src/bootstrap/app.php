@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CabecalhosDeSeguranca;
 use App\Http\Middleware\EnsureAccountIsActive;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'conta.ativa' => EnsureAccountIsActive::class,
         ]);
+
+        // Atrás do proxy HTTPS (Caddy) o IP e o esquema reais vêm nos cabeçalhos X-Forwarded-*.
+        // Sem isto a auditoria gravaria o IP do proxy e as URLs sairiam como http://.
+        // Em produção o web-server só é alcançável pelo proxy; ajuste TRUSTED_PROXIES se isso mudar.
+        $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
+
+        $middleware->append(CabecalhosDeSeguranca::class);
+        $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
