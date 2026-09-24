@@ -1,0 +1,28 @@
+# ==========================================================================
+# CTS Convênios — Caddy (HTTPS automático)
+#
+# SITE_ADDRESS define como o Caddy escuta:
+#   - sem domínio ainda:  SITE_ADDRESS=:80          (HTTP simples, só para testar/homologar)
+#   - com domínio:        SITE_ADDRESS=cts.suaprefeitura.gov.br
+#     -> o Caddy emite e renova o certificado TLS sozinho (Let's Encrypt). O domínio precisa
+#        apontar (registro DNS "A") para o IP do servidor e as portas 80 e 443 estar abertas.
+# ==========================================================================
+{
+	# E-mail da conta no Let's Encrypt (avisos de certificado). Sem domínio (SITE_ADDRESS=:80) não é usado.
+	email {$ACME_EMAIL:admin@example.com}
+}
+
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# O Nginx (serviço "web") entrega os arquivos e chama o PHP. O Caddy já repassa o IP real
+	# e o esquema (https) nos cabeçalhos X-Forwarded-*, que o Laravel confia (TRUSTED_PROXIES).
+	reverse_proxy web:80 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

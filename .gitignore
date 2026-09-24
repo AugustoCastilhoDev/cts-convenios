@@ -14,3 +14,7 @@
 # Docker / SO
 .DS_Store
 Thumbs.db
+
+# Produção: segredos do servidor e backups nunca vão para o Git
+.env.production
+/backups

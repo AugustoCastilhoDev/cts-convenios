@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ContratoVinculado;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\ContratoVinculado */
+/** @mixin ContratoVinculado */
 class ContratoVinculadoResource extends JsonResource
 {
     public function toArray(Request $request): array

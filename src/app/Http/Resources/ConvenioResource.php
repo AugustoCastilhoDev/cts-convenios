@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Convenio;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\Convenio */
+/** @mixin Convenio */
 class ConvenioResource extends JsonResource
 {
     public function toArray(Request $request): array

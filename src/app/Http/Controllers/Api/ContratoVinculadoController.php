@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ContratoVinculado\StoreContratoVinculadoRequest;
 use App\Http\Requests\ContratoVinculado\UpdateContratoVinculadoRequest;
 use App\Http\Resources\ContratoVinculadoResource;
-use App\Models\Convenio;
 use App\Models\ContratoVinculado;
+use App\Models\Convenio;
 use App\Services\ContratoVinculadoService;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
@@ -16,9 +16,7 @@ use Illuminate\Routing\Attributes\Controllers\Middleware;
 #[Middleware('auth:sanctum')]
 class ContratoVinculadoController extends Controller
 {
-    public function __construct(private readonly ContratoVinculadoService $contratos)
-    {
-    }
+    public function __construct(private readonly ContratoVinculadoService $contratos) {}
 
     /**
      * Reaproveita a ConvenioPolicy::view() — se o usuário pode ver o

@@ -1,0 +1,105 @@
+# ==========================================================================
+# CTS Convênios — integração contínua
+# A cada push e pull request: roda os testes, confere o estilo do código,
+# compila o front-end e garante que as imagens de produção constroem.
+# ==========================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: Testes e estilo (PHP)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          # pdo_sqlite: os testes usam SQLite em memória. gd não é necessário (PDFs só têm texto).
+          extensions: mbstring, dom, intl, bcmath, zip, exif, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Cache do Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('src/composer.lock') }}
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Preparar .env de teste
+        run: |
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+
+      - name: Estilo do código (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Testes
+        run: php artisan test --no-interaction
+
+  frontend:
+    name: Build do front-end
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, intl, bcmath, zip
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/package-lock.json
+
+      # O Tailwind lê o vendor do Laravel para achar classes (paginação).
+      - run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+      - run: npm ci
+      - run: npm run build
+
+  imagens:
+    name: Imagens de produção
+    runs-on: ubuntu-latest
+    needs: [testes, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construir imagem da aplicação (sem publicar)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/prod/Dockerfile
+          target: app
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Construir imagem do Nginx (sem publicar)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/prod/Dockerfile
+          target: web
+          push: false
+          cache-from: type=gha

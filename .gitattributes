@@ -1,0 +1,8 @@
+# Scripts e configurações que rodam DENTRO de containers Linux precisam de quebra de linha LF,
+# mesmo quando o repositório é clonado no Windows (onde o Git converteria para CRLF e quebraria
+# o "#!/bin/sh" com o erro "not found").
+*.sh text eol=lf
+docker/** text eol=lf
+Caddyfile text eol=lf
+docker-compose*.yml text eol=lf
+.github/** text eol=lf

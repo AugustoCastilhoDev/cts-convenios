@@ -93,18 +93,28 @@
   - **Alterar senha** (`PUT /api/me/password`, qualquer perfil): exige a senha atual e desconecta os outros dispositivos — resolve a antiga pendência do admin.
 - **Identidade visual e menu lateral** (2026-09-23): as cores agora são tokens em `src/resources/css/app.css` (`petroleo` para o menu e o cartão de saldo, `brand-*` teal para ações e links, `canvas` cinza-azulado para o fundo, `ouro` só na marca do item ativo); trocar a paleta é mexer nesse arquivo. O padrão de cartão é a classe `cartao` (branco, borda e sombra em camadas). Menu lateral fixo no desktop, recolhível para só ícones (preferência lembrada no navegador) e gaveta no celular; itens de Administração só para o admin. Kanban: coluna com faixa colorida da etapa, cartão com faixa lateral pela urgência do prazo (vermelho ≤15 d, laranja ≤30, âmbar ≤90, verde acima), cartão inteiro clicável. Painel: o saldo disponível é o único cartão escuro.
 - **Sino de alertas no sistema** (2026-09-23): segundo canal além do e-mail, no canto superior direito (barra escura no celular). Lê os mesmos alertas do Motor (`alertas_prazo`), sem gerar nada novo: `GET /api/notificacoes` (+ `POST /api/notificacoes/{id}/lida` e `/notificacoes/lidas`), regras no `NotificacaoAlertaService`. Mostra um alerta por prazo (o mais recente: chegou o de 30 dias, some o de 60), dos últimos 60 dias, com os dias recalculados para hoje; esconde o que ficou desatualizado (prazo prorrogado, convênio fora dos status monitorados, cancelado ou excluído) pela mesma regra do e-mail (`AlertaPrazoService::estaObsoleto`). "Lido" é individual (tabela `alerta_prazo_leituras`). Só Gestor e Fiscal (`AlertaPrazoPolicy`); o admin não tem sino. A tela consulta a cada 60 s e ao voltar para a aba, e o título da aba mostra `(N)`. Ideia futura: mesmo painel serve de base para outros canais (WhatsApp) sem mudar o Motor.
+- **Endurecimento para produção** (2026-09-23): login limitado a 5 tentativas/min por e-mail+IP (429 com mensagem em português) e API a 240/min; tokens Sanctum expiram em 12 h (`SANCTUM_EXPIRATION_MINUTOS`) com limpeza diária agendada; cabeçalhos de segurança + CSP (`CabecalhosDeSeguranca`; a CSP só vale fora do ambiente `local`, pois o Laravel Boost injeta um script de depuração em dev); proxies confiáveis (`TRUSTED_PROXIES`) para a auditoria gravar o IP real atrás do Caddy; `por_pagina` limitado a 200 (`Paginacao::porPagina`); `DatabaseSeeder` recusa rodar em produção (o `db:seed --force` contornaria a confirmação do artisan). Estilo do código: `pint --test` passa nos 146 arquivos.
+- **Landing page + formulário de contato** (2026-09-23): página pública em `/` (Blade + Tailwind, sem o pacote do Vue; a "régua de prazos" 90/60/30/15/vencido como peça central, capturas reais do sistema em `public/img`, dados fictícios). O sistema (Vue) passou a viver em `/app` (Vue Router com base `/app/`); endereços antigos (`/login`, `/convenios/...`, `/admin/...`) redirecionam. `/app` e `/api` ficam fora dos buscadores (`robots.txt` + `noindex`). As duas páginas são **sem estado** (sem sessão, sem cookie, sem CSRF: não precisam de aviso de cookies). `POST /api/contato` (público, 5/hora por IP, campo-armadilha, aceite LGPD gravado com data e IP) grava em `contatos_comerciais` e avisa `CONTATO_DESTINO` por e-mail pela fila. Não há tela para ver os pedidos: consulte a tabela ou o e-mail (candidato a próximo item do painel do admin).
+- **`php artisan demo:popular`** cria 8 convênios fictícios realistas na prefeitura de demonstração (`--limpar` remove; recusa rodar em produção). Serve para demonstrações comerciais e capturas de tela.
+- **Infraestrutura de produção** (2026-09-23): `docker/prod/Dockerfile` (multi-estágio: dependências sem pacotes de dev, assets do Vite, imagem `app` e imagem `web`), `docker-compose.prod.yml` (Caddy com HTTPS automático via `SITE_ADDRESS`, Nginx, PHP-FPM, worker da fila, agendador, Postgres e Redis com senha, sem portas expostas), `.env.production.example`, `scripts/deploy.sh` (migra na imagem nova antes de trocar os containers), `scripts/backup.sh` / `scripts/restaurar.sh`, CI no GitHub Actions (testes, Pint, build do front, build das imagens) e o manual `docs/PRODUCAO.md`. `.gitattributes` força LF nos scripts e configs Docker (CRLF do Windows quebraria o `#!/bin/sh`).
 - O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
 
 ## Pendências conhecidas (não esquecidas, só adiadas)
 
 - [ ] Alertas por WhatsApp: decisão (2026-09-23) de usar só e-mail por enquanto, sem plataforma de WhatsApp contratada. Retomar quando houver gateway; o Motor já separa a geração do alerta (`AlertaPrazoService`) do envio (`EnviarAlertaPrazo`), então um novo canal entra como outro job/notificação.
-- [ ] E-mail em produção: hoje envia via Resend com domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev. Ao registrar o domínio do CTS: verificar no Resend, trocar `MAIL_FROM_ADDRESS`, DMARC em `p=quarantine` após estabilizar, e testar entrega em caixas institucionais (`.gov.br`, Outlook), pois o primeiro teste caiu em spam no Gmail (reputação de domínio novo + texto puro; SPF/DKIM/DMARC estavam corretos).
+- [ ] **Domínio do CTS (única pendência para o go-live)**: ainda não registrado. Quando existir, seguir o bloco "Quando o domínio existir" de `docs/PRODUCAO.md`: DNS `A`, `SITE_ADDRESS`/`APP_URL`/`ACME_EMAIL`, verificar o domínio no Resend (SPF/DKIM/DMARC), trocar `MAIL_FROM_ADDRESS`, deixar `ALERTAS_REDIRECIONAR_PARA` vazio e testar entrega em caixas `.gov.br`/Outlook (o 1º teste caiu em spam no Gmail: reputação de domínio novo; SPF/DKIM/DMARC estavam corretos; DMARC começa em `p=none` e sobe para `p=quarantine`). Hoje o e-mail sai por um domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev.
+- [ ] **Texto jurídico**: política de privacidade, termos de uso e contrato/SLA com as prefeituras precisam de revisão de quem entende de LGPD; o rodapé da landing ainda não tem CNPJ/razão social/contato oficial.
 
 ## Próximos passos (em ordem sugerida)
 
 O front-end do Módulo 2 (Kanban, painel, detalhe, contratos e documentos), a exportação do Fiscal e o painel do Administrador estão completos. Refinamentos possíveis depois: testes automatizados do front-end (Vitest) e ajustes visuais.
 
-1. **Preparação para produção**: revisar `APP_DEBUG`, gerar `APP_KEY` novo, secrets fora do `.env` versionado, CI rodando a suíte de testes a cada push.
+O que falta para ir ao ar é só o domínio e o texto jurídico (acima). Melhorias possíveis depois, sem ordem fixa:
+
+- Tela no painel do admin para ver/exportar os pedidos de contato da landing (`contatos_comerciais`).
+- Testes automatizados do front-end (Vitest) e um teste de ponta a ponta do fluxo principal.
+- Monitoramento externo do `/up` e alerta se o servidor cair (ex.: UptimeRobot) e envio dos backups para fora do servidor.
+- WhatsApp como terceiro canal de alerta, quando houver gateway contratado.
 
 ## Armadilhas conhecidas (para não repetir)
 
@@ -120,6 +130,10 @@ O front-end do Módulo 2 (Kanban, painel, detalhe, contratos e documentos), a ex
 - **`owen-it/laravel-auditing` não audita nada rodado via `artisan`/`tinker`/seeders** por padrão (`audit.console => false`) — isso é proposital do pacote, não bug. Só audita requisições HTTP reais.
 
 - **Cache do PHP em dev (opcache)**: no Windows a pasta compartilhada com o Docker é lenta e conferir os arquivos a cada requisição custava ~2 s por página. Hoje `opcache.revalidate_freq = 30` (em `docker/php/php.ini`): as requisições levam ~0,2 s, mas uma edição em PHP pode levar até 30 s para valer **nas chamadas HTTP** (o artisan/testes não são afetados). Para valer na hora: `docker compose restart app-server` (o `kill` não existe na imagem). Em produção, usar `validate_timestamps = 0`.
+
+- **`.dockerignore` do repositório vale para o contexto inteiro** (`context: .` nos dois Dockerfiles): ao excluir algo lá, confira que nenhum `COPY` do Dockerfile de produção precisa desse caminho.
+- **Testes e `@vite`**: sem `public/build` (CI, máquina nova) qualquer teste que renderize `landing`/`app` falha com "Vite manifest not found". A base dos testes (`tests/TestCase.php`) chama `withoutVite()`; não remova.
+- **Pint em pastas inteiras reformata arquivos antigos**; em mudanças pequenas rode só nos arquivos tocados (`vendor/bin/pint arquivo1 arquivo2`). O CI roda `pint --test` no projeto todo: mantenha-o passando.
 
 ## Comandos essenciais para retomar
 
@@ -141,5 +155,9 @@ docker compose exec app-server php artisan test
 # Corrigir permissões depois de instalar algo via composer:2
 docker compose exec -u root app-server chown -R appuser:appuser /var/www/html
 ```
+
+Produção: veja `docs/PRODUCAO.md` (deploy, backup, restauração, checklist).
+Sistema em desenvolvimento: `http://localhost:8000/app/` (a landing page é `http://localhost:8000/`).
+Carteira de demonstração: `docker compose exec app-server php artisan demo:popular` (e `--limpar`).
 
 Login de teste: `gestor@municipio-exemplo.gov.br` / `password` (senha igual para admin/gestor/fiscal).

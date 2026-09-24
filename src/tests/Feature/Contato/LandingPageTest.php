@@ -41,6 +41,17 @@ class LandingPageTest extends TestCase
         $this->getJson('/api/rota-que-nao-existe')->assertNotFound()->assertJsonStructure(['message']);
     }
 
+    public function test_paginas_publicas_nao_criam_sessao_nem_enviam_cookies(): void
+    {
+        foreach (['/', '/app/login'] as $caminho) {
+            $resposta = $this->get($caminho)->assertOk();
+
+            $this->assertEmpty($resposta->headers->getCookies(), "{$caminho} não deveria enviar cookies");
+        }
+
+        $this->assertDatabaseCount('sessions', 0);
+    }
+
     public function test_robots_barra_o_sistema_e_a_api(): void
     {
         $robots = file_get_contents(public_path('robots.txt'));
