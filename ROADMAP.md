@@ -99,26 +99,26 @@
 - **Infraestrutura de produção** (2026-09-23): `docker/prod/Dockerfile` (multi-estágio: dependências sem pacotes de dev, assets do Vite, imagem `app` e imagem `web`), `docker-compose.prod.yml` (Caddy com HTTPS automático via `SITE_ADDRESS`, Nginx, PHP-FPM, worker da fila, agendador, Postgres e Redis com senha, sem portas expostas), `.env.production.example`, `scripts/deploy.sh` (migra na imagem nova antes de trocar os containers), `scripts/backup.sh` / `scripts/restaurar.sh`, CI no GitHub Actions (testes, Pint, build do front, build das imagens) e o manual `docs/PRODUCAO.md`. `.gitattributes` força LF nos scripts e configs Docker (CRLF do Windows quebraria o `#!/bin/sh`).
 - O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
 
-## Em andamento — Painel, Kanban e marca (pedido de 2026-09-23)
+## Painel, Kanban e marca — entregue (pedido de 2026-09-23)
 
-Pedido do product owner, executado nesta ordem. Marque `[x]` conforme for entregue.
+Pedido do product owner, executado na ordem abaixo. Tudo entregue e verificado no navegador; o que ficou como simulação ou pendente está explícito nos itens e na análise.
 
 ### Etapa 1 — Back-end
-- [ ] **1.1 Migration `secretaria`** em `convenios`: coluna `string` (enum no Model, regra do projeto: string + cast), **nullable** (há convênios antigos sem classificação). Valores: Saúde, Educação, Obras, Administração, Assistência Social e Outra (lista extensível).
-- [ ] **1.2 Model e API**: `secretaria` no `#[Fillable]` do `Convenio` (atributo nativo do Laravel 13) e cast para o enum `Secretaria`; `ConvenioResource` devolve `secretaria` (+ `secretaria_label`) e, de forma explícita, `valor_contratado` e `percentual_comprometido` (contratado ÷ (repasse + contrapartida) × 100).
+- [x] **1.1 Migration `secretaria`** em `convenios`: coluna `string` (enum `App\Enums\Secretaria` no Model, regra do projeto: string + cast), **nullable** (há convênios antigos sem classificação), com índice `(tenant_id, secretaria)`. Valores: Saúde, Educação, Obras, Administração, Assistência Social e Outra. Para incluir outra secretaria: um `case` no enum + uma linha em `resources/js/utils/secretaria.js` (sem migration).
+- [x] **1.2 Model e API**: `secretaria` no `#[Fillable]` do `Convenio` e cast para o enum; `ConvenioResource` devolve `secretaria` (+ `secretaria_label`), `valor_contratado` e `percentual_comprometido` (contratado ÷ (repasse + contrapartida) × 100, uma casa decimal, 0 se o valor total for 0, pode passar de 100). Também: filtro `Convenio::daSecretaria()`, validação nos requests, secretaria nas exportações (CSV, PDF, ficha) e no rótulo da auditoria, e `demo:popular` classificado.
 
 ### Etapa 2 — Kanban (Vue 3 + Tailwind)
-- [ ] **2.1 Badge de secretaria** no topo de cada cartão (Saúde verde, Obras azul, Educação laranja, demais em cores próprias; sem secretaria = cinza "Sem secretaria").
-- [ ] **2.2 Indicador de contratação** abaixo do "Saldo disponível": `Contratado: R$ 1.100,00 (50%)`.
-- [ ] **2.3 Colunas vazias com `opacity-60`** (cabeçalho e fundo) quando o contador é 0, para dar foco às colunas com convênios; a coluna volta a 100% quando algo é arrastado por cima (continua sendo alvo de soltar).
+- [x] **2.1 Badge de secretaria** no topo de cada cartão (Saúde verde, Obras azul, Educação laranja, Administração violeta, Assistência Social rosa, Outra cinza; sem secretaria = cinza claro "Sem secretaria"). Também no detalhe do convênio; o formulário ganhou o seletor (obrigatório ao criar).
+- [x] **2.2 Indicador de contratação** abaixo do "Saldo disponível": `Contratado: R$ 1.100,00 (50%)` (o detalhe também mostra o percentual).
+- [x] **2.3 Colunas vazias com `opacity-60`** quando o contador é 0 (confirmado no navegador: 0,6 nas vazias e 1 na que tem convênio); voltam a 100% ao arrastar algo por cima ou passar o mouse (continuam sendo alvo de soltar). A busca também conta: filtrar por texto esmaece as colunas que ficam sem resultados.
 
 ### Etapa 3 — Painel (Vue 3)
-- [ ] **3.1 Indicador de adimplência do município** no topo: bolinha vermelha + "Atenção: Risco de Inadimplência (CADIN)" se houver qualquer prazo vencido; bolinha verde + "Município Regular" se tudo estiver em dia.
-- [ ] **3.2 Filtro "Filtrar por Secretaria"** no cabeçalho do Painel: ao escolher, os cartões financeiros, o gráfico de etapas, os prazos críticos e os contratos recalculam só para aquela secretaria.
-- [ ] **3.3 Botão de ação rápida em "Prazos críticos"**: abre um modal/feedback que **simula** o "disparo manual de notificação de cobrança" ao fiscal responsável.
+- [x] **3.1 Indicador de adimplência do município** no topo: bolinha vermelha + "Atenção: Risco de Inadimplência (CADIN)" (com nº de prazos vencidos, maior atraso e link "ver prazos") se houver qualquer prazo vencido; bolinha verde + "Município Regular" se tudo estiver em dia. Calculado no servidor (`regularidade` em `GET /api/dashboard`) com as mesmas regras do Motor de Alertas (vigência e prestação de contas em convênios ainda monitorados; finalizados não contam). Traz a nota de que não substitui a consulta oficial.
+- [x] **3.2 Filtro "Filtrar por Secretaria"** no cabeçalho do Painel (`GET /api/dashboard?secretaria=saude`; inclui "Todas" e "Sem secretaria"): cartões, etapas, prazos críticos e contratos recalculam só para a secretaria. O filtro fica na URL (`?secretaria=`), esmaece os números antigos enquanto consulta e descarta respostas atrasadas. O selo de adimplência **não** muda com o filtro.
+- [x] **3.3 Botão de ação rápida em "Prazos críticos"** (ícone de envelope; só para quem edita convênios): abre o modal "Cobrança de prazo ao fiscal" com a mensagem que seria enviada e **simula** o disparo. **Nada é enviado** e o modal avisa isso duas vezes (prévia + resultado).
 
 ### Marca
-- [ ] **Logotipo "CTS Convênios"**: SVG inline único (escudo + três barras crescentes; texto "CTS" em negrito e "CONVÊNIOS" menor com espaçamento largo), paleta azul `blue-500` + esmeralda `emerald-500` sobre fundo escuro, sem fontes/imagens externas. Componente Vue (menu lateral, login) e equivalente Blade (landing), mais o favicon.
+- [x] **Logotipo "CTS Convênios"**: SVG inline (escudo com degradê azul→esmeralda guardando um pequeno relógio sobre três barras crescentes; "CTS" em negrito e "CONVÊNIOS" menor com espaçamento largo), sem fontes/imagens externas. Escolhida entre 3 variações a versão que reúne os três conceitos (segurança, prazo, fluxo) e ainda lê bem pequena. `LogoCts.vue` (menu lateral, barra do celular, login; `compacto` = só o ícone no menu recolhido), `<x-logo-cts>` em Blade (landing) e `public/favicon.svg`.
 
 ### Análise do pedido (decisões e riscos)
 1. **`valor_contratado` já existia como `total_contratado`** na API. Mantidos os dois nomes (o front atual usa `total_contratado`) para não quebrar nada; `valor_contratado` é o nome novo e explícito.
@@ -127,6 +127,7 @@ Pedido do product owner, executado nesta ordem. Marque `[x]` conforme for entreg
 4. **O indicador de CADIN é do município inteiro e não muda com o filtro** (adimplência é do município, não de uma secretaria). Ele considera **apenas os prazos cadastrados no CTS** (vigência e prestação de contas vencidos em convênios ainda monitorados) — **não é consulta oficial ao CADIN/CAUC/SIAFI**. Por isso a tela traz uma nota explicando isso; "Município Regular" significa "sem prazo vencido no sistema", não uma certidão.
 5. **O botão de cobrança é só simulação**, como pedido: nenhum e-mail é enviado e o modal avisa isso com clareza (não enganar o usuário). Para virar real faltam: um campo "fiscal responsável" por convênio (hoje não existe), endpoint próprio com autorização, limite de disparos e registro na auditoria.
 6. Consequências em outros pontos: formulário de convênio e o "mover" do Kanban passam a carregar `secretaria`; exportações (CSV/PDF/ficha) e o rótulo da auditoria incluem a secretaria; `demo:popular` classifica a carteira fictícia.
+8. **Pendências decorrentes** (para depois): (a) tornar `secretaria` obrigatória na API quando todos os convênios existentes estiverem classificados; (b) cobrança real ao fiscal (campo "fiscal responsável" por convênio + endpoint + limite + auditoria); (c) o Painel ainda não tem filtro por período nem o Kanban por secretaria (o pedido só cobria o Painel); (d) o indicador "Município Regular" poderia, no futuro, cruzar com uma consulta oficial (CAUC/CADIN) se houver integração.
 7. **Logotipo**: o pedido usa `blue-500`/`emerald-500` (padrão do Tailwind), diferente do teal/ouro atual do sistema; seguido como pedido. O SVG é duplicado (Vue e Blade) porque a landing não carrega o Vue — se mudar o desenho, alterar os dois.
 
 ## Pendências conhecidas (não esquecidas, só adiadas)

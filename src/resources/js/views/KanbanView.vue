@@ -3,7 +3,8 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api, ApiError } from '../services/api';
 import { useAuthStore } from '../stores/auth';
-import { faixaDoPrazo, formatarMoeda, formatarData, situacaoPrazo } from '../utils/format';
+import { faixaDoPrazo, formatarMoeda, formatarData, formatarPercentual, situacaoPrazo } from '../utils/format';
+import { infoSecretaria } from '../utils/secretaria';
 import { statusConvenio } from '../utils/status';
 import BotaoExportar from '../components/BotaoExportar.vue';
 import ConvenioFormModal from '../components/ConvenioFormModal.vue';
@@ -82,6 +83,7 @@ async function moverPara(convenio, status) {
             numero_convenio: anterior.numero_convenio,
             orgao_concedente: anterior.orgao_concedente,
             objeto: anterior.objeto,
+            secretaria: anterior.secretaria,
             valor_repasse: anterior.valor_repasse,
             valor_contrapartida: anterior.valor_contrapartida,
             data_assinatura: anterior.data_assinatura,
@@ -162,8 +164,14 @@ onMounted(carregar);
             <section
                 v-for="coluna in colunas"
                 :key="coluna.status"
-                class="min-w-[85%] flex-1 snap-start rounded-lg border-t-4 bg-coluna transition-shadow sm:min-w-56"
-                :class="[coluna.topo, sobreColuna === coluna.status ? 'shadow-cartao-alto ring-2 ring-brand-500' : '']"
+                class="min-w-[85%] flex-1 snap-start rounded-lg border-t-4 bg-coluna transition-[opacity,box-shadow] sm:min-w-56"
+                :class="[
+                    coluna.topo,
+                    sobreColuna === coluna.status ? 'shadow-cartao-alto ring-2 ring-brand-500' : '',
+                    // Coluna sem convênios recua (opacity-60) para dar foco às que têm trabalho;
+                    // volta ao normal ao arrastar um cartão por cima ou passar o mouse.
+                    porColuna[coluna.status].length === 0 && sobreColuna !== coluna.status ? 'opacity-60 hover:opacity-100' : '',
+                ]"
                 @dragover.prevent="sobreColuna = coluna.status"
                 @dragleave="sobreColuna = null"
                 @drop.prevent="soltar(coluna.status)"
@@ -186,6 +194,9 @@ onMounted(carregar);
                         @dragend="finalizarArraste"
                         @click="abrir($event, c)"
                     >
+                        <span class="mb-2 inline-block rounded px-1.5 py-0.5 text-xs font-medium" :class="infoSecretaria(c.secretaria).classes">
+                            {{ infoSecretaria(c.secretaria).titulo }}
+                        </span>
                         <div class="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                             <h3 class="text-sm font-semibold text-petroleo">
                                 <RouterLink :to="{ name: 'convenio', params: { id: c.id } }" class="hover:text-brand-700 hover:underline" draggable="false">
@@ -215,6 +226,9 @@ onMounted(carregar);
                                 <dd class="font-medium">{{ formatarData(c.data_vigencia_fim) }}</dd>
                             </div>
                         </dl>
+                        <p class="mt-1.5 text-xs text-slate-500">
+                            Contratado: {{ formatarMoeda(c.valor_contratado) }} ({{ formatarPercentual(c.percentual_comprometido) }})
+                        </p>
 
                         <select
                             v-if="auth.podeEditar"

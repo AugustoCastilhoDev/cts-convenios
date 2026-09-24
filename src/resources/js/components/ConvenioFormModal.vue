@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { api, ApiError } from '../services/api';
 import { useAuthStore } from '../stores/auth';
+import { secretarias } from '../utils/secretaria';
 import { statusConvenio } from '../utils/status';
 
 // convenio = null cria um novo; com um convênio, edita (a API é PUT com todos os campos).
@@ -19,6 +20,7 @@ const form = reactive({
     numero_convenio: props.convenio?.numero_convenio ?? '',
     orgao_concedente: props.convenio?.orgao_concedente ?? '',
     objeto: props.convenio?.objeto ?? '',
+    secretaria: props.convenio?.secretaria ?? '',
     valor_repasse: props.convenio?.valor_repasse ?? 0,
     valor_contrapartida: props.convenio?.valor_contrapartida ?? 0,
     status: props.convenio?.status ?? 'proposta',
@@ -102,6 +104,15 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                     <label class="text-sm font-medium" for="objeto">Objeto</label>
                     <textarea id="objeto" v-model="form.objeto" required rows="3" :class="campo" />
                     <p v-if="erros.objeto" class="mt-1 text-xs text-red-600">{{ erros.objeto[0] }}</p>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="text-sm font-medium" for="secretaria">Secretaria responsável</label>
+                    <!-- Nova: a escolha é exigida (governança). Edição de convênio antigo: pode seguir sem classificar. -->
+                    <select id="secretaria" v-model="form.secretaria" :required="!convenio" :class="campo">
+                        <option value="" :disabled="!convenio">{{ convenio ? 'Sem secretaria' : 'Selecione a secretaria' }}</option>
+                        <option v-for="s in secretarias" :key="s.valor" :value="s.valor">{{ s.titulo }}</option>
+                    </select>
+                    <p v-if="erros.secretaria" class="mt-1 text-xs text-red-600">{{ erros.secretaria[0] }}</p>
                 </div>
                 <div>
                     <label class="text-sm font-medium" for="repasse">Valor do repasse (R$)</label>

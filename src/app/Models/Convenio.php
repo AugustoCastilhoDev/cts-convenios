@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Secretaria;
 use App\Enums\StatusConvenio;
 use App\Http\Resources\ConvenioResource;
 use App\Models\Concerns\BelongsToTenant;
@@ -25,6 +26,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
     'numero_convenio',
     'orgao_concedente',
     'objeto',
+    'secretaria',
     'valor_repasse',
     'valor_contrapartida',
     'status',
@@ -36,6 +38,9 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 #[UseResource(ConvenioResource::class)]
 class Convenio extends Model implements AuditableContract
 {
+    /** Valor de filtro para "convênios sem secretaria" (não é um valor gravado no banco). */
+    public const SEM_SECRETARIA = 'sem_secretaria';
+
     use Auditable;
     use BelongsToTenant;
     use HasFactory;
@@ -48,6 +53,7 @@ class Convenio extends Model implements AuditableContract
             'valor_repasse' => 'decimal:2',
             'valor_contrapartida' => 'decimal:2',
             'status' => StatusConvenio::class,
+            'secretaria' => Secretaria::class,
             'data_assinatura' => 'date',
             'data_vigencia_fim' => 'date',
             'prazo_prestacao_contas' => 'date',
@@ -63,6 +69,17 @@ class Convenio extends Model implements AuditableContract
         $query
             ->when($status, fn (Builder $query) => $query->where('status', $status))
             ->when($busca, fn (Builder $query) => $query->where('numero_convenio', 'like', '%'.$busca.'%'));
+    }
+
+    /**
+     * Restringe a uma secretaria. Sem valor não filtra; o valor especial
+     * "sem_secretaria" traz os convênios ainda não classificados.
+     */
+    public function scopeDaSecretaria(Builder $query, ?string $secretaria): void
+    {
+        $query->when($secretaria, fn (Builder $query) => $secretaria === self::SEM_SECRETARIA
+            ? $query->whereNull('secretaria')
+            : $query->where('secretaria', $secretaria));
     }
 
     public function contratosVinculados(): HasMany

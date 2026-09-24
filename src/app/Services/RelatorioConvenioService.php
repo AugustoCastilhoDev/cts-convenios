@@ -28,7 +28,7 @@ class RelatorioConvenioService
     private const OPCOES_PDF = ['enable_font_subsetting' => true];
 
     private const CABECALHO_CSV = [
-        'Número', 'Órgão concedente', 'Objeto', 'Etapa', 'Repasse (R$)', 'Contrapartida (R$)',
+        'Número', 'Órgão concedente', 'Objeto', 'Secretaria', 'Etapa', 'Repasse (R$)', 'Contrapartida (R$)',
         'Contratado (R$)', 'Saldo disponível (R$)', 'Assinatura', 'Fim da vigência', 'Prestação de contas',
     ];
 
@@ -59,6 +59,7 @@ class RelatorioConvenioService
                     $this->textoSeguro($convenio->numero_convenio),
                     $this->textoSeguro($convenio->orgao_concedente),
                     $this->textoSeguro($convenio->objeto),
+                    $convenio->secretaria?->label(),
                     $convenio->status->label(),
                     $this->numero((float) $convenio->valor_repasse),
                     $this->numero((float) $convenio->valor_contrapartida),

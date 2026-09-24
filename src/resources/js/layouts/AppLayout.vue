@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AlterarSenhaModal from '../components/AlterarSenhaModal.vue';
 import Icone from '../components/Icone.vue';
+import LogoCts from '../components/LogoCts.vue';
 import SinoAlertas from '../components/SinoAlertas.vue';
 import { useAuthStore } from '../stores/auth';
 import { useNotificacoesStore } from '../stores/notificacoes';
@@ -93,7 +94,7 @@ const itemInativo = 'text-slate-300 hover:bg-white/5 hover:text-white';
             <button class="-ml-1 rounded-md p-1.5 hover:bg-white/10" aria-label="Abrir menu" @click="gavetaAberta = true">
                 <Icone nome="menu" />
             </button>
-            <span class="font-semibold tracking-tight">CTS Convênios</span>
+            <LogoCts class="h-8 w-auto" />
             <SinoAlertas v-if="auth.temSino" escuro class="ml-auto" />
         </header>
 
@@ -105,11 +106,9 @@ const itemInativo = 'text-slate-300 hover:bg-white/5 hover:text-white';
             aria-label="Menu principal"
         >
             <div class="flex h-16 shrink-0 items-center gap-3 px-4">
-                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-500 text-sm font-bold text-white ring-1 ring-white/20">CTS</span>
-                <span class="min-w-0 leading-tight" :class="{ 'lg:hidden': recolhido }">
-                    <span class="block truncate font-semibold text-white">CTS Convênios</span>
-                    <span class="block truncate text-xs text-slate-400">Prazos em dia, sem CADIN</span>
-                </span>
+                <!-- Menu recolhido (só telas grandes): apenas o ícone; na gaveta do celular, sempre o logotipo completo. -->
+                <LogoCts class="h-10 w-auto" :class="{ 'lg:hidden': recolhido }" />
+                <LogoCts v-if="recolhido" compacto class="hidden h-9 w-auto lg:block" />
                 <button class="ml-auto rounded-md p-1.5 text-slate-300 hover:bg-white/10 lg:hidden" aria-label="Fechar menu" @click="gavetaAberta = false">
                     <Icone nome="fechar" />
                 </button>

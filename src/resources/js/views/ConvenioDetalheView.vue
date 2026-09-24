@@ -3,7 +3,8 @@ import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api, ApiError } from '../services/api';
 import { useAuthStore } from '../stores/auth';
-import { formatarMoeda, formatarData, situacaoPrazo } from '../utils/format';
+import { formatarMoeda, formatarData, formatarPercentual, situacaoPrazo } from '../utils/format';
+import { infoSecretaria } from '../utils/secretaria';
 import { statusContrato } from '../utils/status';
 import ArquivosConvenio from '../components/ArquivosConvenio.vue';
 import BotaoExportar from '../components/BotaoExportar.vue';
@@ -148,7 +149,12 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
             <header class="mt-3 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h1 class="text-2xl font-semibold">Convênio {{ convenio.numero_convenio }}</h1>
-                    <p class="mt-1 text-sm text-slate-500">{{ convenio.orgao_concedente }}</p>
+                    <p class="mt-1 text-sm text-slate-500">
+                        {{ convenio.orgao_concedente }}
+                        <span class="ml-2 inline-block rounded px-1.5 py-0.5 text-xs font-medium" :class="infoSecretaria(convenio.secretaria).classes">
+                            {{ infoSecretaria(convenio.secretaria).titulo }}
+                        </span>
+                    </p>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="rounded-full bg-slate-200 px-3 py-1 text-sm font-medium">{{ convenio.status_label }}</span>
@@ -194,7 +200,8 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
                 </div>
                 <div class="cartao p-4">
                     <dt class="text-xs text-slate-500">Contratado</dt>
-                    <dd class="mt-1 text-lg font-semibold">{{ formatarMoeda(convenio.total_contratado) }}</dd>
+                    <dd class="mt-1 text-lg font-semibold">{{ formatarMoeda(convenio.valor_contratado) }}</dd>
+                    <p class="mt-0.5 text-xs text-slate-500">{{ formatarPercentual(convenio.percentual_comprometido) }} do valor total</p>
                 </div>
                 <div class="cartao p-4">
                     <dt class="text-xs text-slate-500">Saldo disponível</dt>

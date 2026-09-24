@@ -56,6 +56,11 @@ defineProps({ nome: { type: String, required: true } });
             <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9z" />
             <path d="M10 19a2 2 0 0 0 4 0" />
         </template>
+        <!-- envelope (cobrança/e-mail) -->
+        <template v-if="nome === 'envelope'">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M3.5 7l8.5 6 8.5-6" />
+        </template>
         <!-- sair -->
         <template v-if="nome === 'sair'">
             <path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5" />

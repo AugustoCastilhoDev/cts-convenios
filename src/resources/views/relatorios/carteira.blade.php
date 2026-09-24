@@ -19,6 +19,7 @@
                 @if ($exibirPrefeitura)<th>Prefeitura</th>@endif
                 <th>Órgão concedente</th>
                 <th>Objeto</th>
+                <th>Secretaria</th>
                 <th>Etapa</th>
                 <th class="num">Repasse</th>
                 <th class="num">Contrapartida</th>
@@ -35,6 +36,7 @@
                     @if ($exibirPrefeitura)<td>{{ $c->tenant?->razao_social }}</td>@endif
                     <td>{{ $c->orgao_concedente }}</td>
                     <td>{{ \Illuminate\Support\Str::limit($c->objeto, 90) }}</td>
+                    <td>{{ $c->secretaria?->label() ?? '—' }}</td>
                     <td>{{ $c->status->label() }}</td>
                     <td class="num">{{ number_format((float) $c->valor_repasse, 2, ',', '.') }}</td>
                     <td class="num">{{ number_format((float) $c->valor_contrapartida, 2, ',', '.') }}</td>
@@ -43,13 +45,13 @@
                     <td>{{ $c->data_vigencia_fim?->format('d/m/Y') ?? '—' }}</td>
                 </tr>
             @empty
-                <tr><td colspan="{{ $exibirPrefeitura ? 10 : 9 }}" class="muted">Nenhum convênio encontrado para o filtro.</td></tr>
+                <tr><td colspan="{{ $exibirPrefeitura ? 11 : 10 }}" class="muted">Nenhum convênio encontrado para o filtro.</td></tr>
             @endforelse
         </tbody>
         @if ($convenios->isNotEmpty())
             <tfoot>
                 <tr class="totais">
-                    <td colspan="{{ $exibirPrefeitura ? 5 : 4 }}">Totais</td>
+                    <td colspan="{{ $exibirPrefeitura ? 6 : 5 }}">Totais</td>
                     <td class="num">{{ number_format($totalRepasse, 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($totalContrapartida, 2, ',', '.') }}</td>
                     <td class="num">{{ number_format($totalContratado, 2, ',', '.') }}</td>

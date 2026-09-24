@@ -106,3 +106,8 @@ export function corDoPrazo(dias) {
 
     return 'bg-amber-400';
 }
+
+/** 50 -> "50%", 33.3 -> "33,3%" (no máximo uma casa decimal, vírgula como separador). */
+export function formatarPercentual(valor) {
+    return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(valor ?? 0)}%`;
+}

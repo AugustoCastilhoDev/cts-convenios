@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Secretaria;
 use App\Enums\StatusConvenio;
 use App\Enums\StatusExecucaoContrato;
 use App\Models\ContratoVinculado;
@@ -51,6 +52,25 @@ class PopularDemonstracao extends Command
         ];
     }
 
+    /**
+     * Secretaria de cada convênio da carteira fictícia (pelo número).
+     *
+     * @return array<string, Secretaria>
+     */
+    private function secretarias(): array
+    {
+        return [
+            '934871/2025' => Secretaria::Saude,
+            '928309/2025' => Secretaria::Saude,
+            '921450/2025' => Secretaria::Obras,
+            '940212/2026' => Secretaria::Educacao,
+            '951034/2026' => Secretaria::Educacao,
+            '957660/2026' => Secretaria::Administracao,
+            '905118/2024' => Secretaria::AssistenciaSocial,
+            '899732/2023' => Secretaria::Outra,
+        ];
+    }
+
     public function handle(): int
     {
         if (app()->isProduction()) {
@@ -84,6 +104,7 @@ class PopularDemonstracao extends Command
                 'numero_convenio' => $numero,
                 'orgao_concedente' => $orgao,
                 'objeto' => $objeto,
+                'secretaria' => $this->secretarias()[$numero] ?? null,
                 'valor_repasse' => $repasse,
                 'valor_contrapartida' => $contrapartida,
                 'status' => $status,

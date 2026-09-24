@@ -1,7 +1,7 @@
 @php
     $moeda = fn ($v) => 'R$ '.number_format((float) $v, 2, ',', '.');
     $rotulos = [
-        'numero_convenio' => 'Número', 'orgao_concedente' => 'Órgão concedente', 'objeto' => 'Objeto',
+        'numero_convenio' => 'Número', 'orgao_concedente' => 'Órgão concedente', 'objeto' => 'Objeto', 'secretaria' => 'Secretaria',
         'valor_repasse' => 'Repasse', 'valor_contrapartida' => 'Contrapartida', 'status' => 'Etapa',
         'data_assinatura' => 'Assinatura', 'data_vigencia_fim' => 'Fim da vigência',
         'prazo_prestacao_contas' => 'Prestação de contas', 'tenant_id' => 'Prefeitura', 'deleted_at' => 'Exclusão',
@@ -26,6 +26,7 @@
     <table class="grade">
         <tr><td class="muted">Órgão concedente</td><td>{{ $convenio->orgao_concedente }}</td></tr>
         <tr><td class="muted">Objeto</td><td>{{ $convenio->objeto }}</td></tr>
+        <tr><td class="muted">Secretaria</td><td>{{ $convenio->secretaria?->label() ?? '—' }}</td></tr>
         <tr><td class="muted">Etapa</td><td>{{ $convenio->status->label() }}</td></tr>
         <tr><td class="muted">Assinatura</td><td>{{ $convenio->data_assinatura?->format('d/m/Y') ?? '—' }}</td></tr>
         <tr><td class="muted">Fim da vigência</td><td>{{ $convenio->data_vigencia_fim?->format('d/m/Y') ?? '—' }}</td></tr>

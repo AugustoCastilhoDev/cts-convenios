@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { ApiError } from '../services/api';
+import LogoCts from '../components/LogoCts.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -33,10 +34,7 @@ const campo = 'mt-1 w-full rounded-md border border-borda bg-white px-3 py-2.5 s
 <template>
     <main class="grid min-h-screen bg-canvas lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
         <section class="hidden flex-col justify-between bg-petroleo p-12 text-white lg:flex">
-            <div class="flex items-center gap-3">
-                <span class="grid size-10 place-items-center rounded-lg bg-brand-500 text-sm font-bold ring-1 ring-white/20">CTS</span>
-                <span class="text-lg font-semibold tracking-tight">CTS Convênios</span>
-            </div>
+            <LogoCts class="h-12 w-auto" />
 
             <div>
                 <div class="mb-6 h-1 w-14 rounded-full bg-ouro" />

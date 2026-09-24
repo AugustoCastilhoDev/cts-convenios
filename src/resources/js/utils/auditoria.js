@@ -17,6 +17,7 @@ const rotulosCampos = {
     numero_convenio: 'Número',
     orgao_concedente: 'Órgão concedente',
     objeto: 'Objeto',
+    secretaria: 'Secretaria',
     valor_repasse: 'Repasse',
     valor_contrapartida: 'Contrapartida',
     status: 'Etapa',

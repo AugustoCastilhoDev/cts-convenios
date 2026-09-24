@@ -21,9 +21,8 @@
     {{-- Cabeçalho --}}
     <header class="bg-petroleo text-white">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-            <a href="/" class="flex items-center gap-3" aria-label="CTS Convênios — página inicial">
-                <span class="grid size-9 place-items-center rounded-lg bg-brand-500 text-sm font-bold ring-1 ring-white/20">CTS</span>
-                <span class="text-lg font-semibold tracking-tight">CTS Convênios</span>
+            <a href="/" aria-label="CTS Convênios — página inicial">
+                <x-logo-cts class="h-10 w-auto" />
             </a>
             <nav class="hidden items-center gap-7 text-sm text-slate-300 md:flex" aria-label="Seções da página">
                 <a href="#como-funciona" class="hover:text-white">Como funciona</a>

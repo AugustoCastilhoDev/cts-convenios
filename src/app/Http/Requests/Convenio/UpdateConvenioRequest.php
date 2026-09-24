@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Convenio;
 
+use App\Enums\Secretaria;
 use App\Enums\StatusConvenio;
 use Illuminate\Foundation\Http\Attributes\StopOnFirstFailure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -31,6 +32,7 @@ class UpdateConvenioRequest extends FormRequest
             ],
             'orgao_concedente' => ['required', 'string', 'max:255'],
             'objeto' => ['required', 'string'],
+            'secretaria' => ['nullable', Rule::enum(Secretaria::class)],
             'valor_repasse' => ['required', 'numeric', 'min:0'],
             'valor_contrapartida' => ['required', 'numeric', 'min:0'],
             'status' => ['required', Rule::enum(StatusConvenio::class)],
