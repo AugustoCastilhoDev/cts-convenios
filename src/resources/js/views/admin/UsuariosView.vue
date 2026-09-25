@@ -6,6 +6,7 @@ import Paginacao from '../../components/Paginacao.vue';
 import SenhaTemporariaModal from '../../components/SenhaTemporariaModal.vue';
 import UsuarioFormModal from '../../components/UsuarioFormModal.vue';
 import { useAuthStore } from '../../stores/auth';
+import { formatarDataHora } from '../../utils/format';
 
 const route = useRoute();
 const auth = useAuthStore();
@@ -52,12 +53,12 @@ function abrir(usuario = null) {
     formulario.value = true;
 }
 
-function salvo({ usuario, senha }) {
+function salvo({ usuario, senha, expiraEm }) {
     formulario.value = false;
 
     // Conta nova: a senha temporária aparece uma única vez, num aviso que só fecha pelo botão.
     if (senha) {
-        aviso.value = { titulo: 'Usuário criado', usuario, senha };
+        aviso.value = { titulo: 'Usuário criado', usuario, senha, expiraEm };
     }
 
     carregar();
@@ -75,7 +76,7 @@ async function redefinirSenha(usuario) {
 
     try {
         const resposta = await api.post(`/users/${usuario.id}/redefinir-senha`);
-        aviso.value = { titulo: 'Senha redefinida', usuario: resposta.data, senha: resposta.senha_temporaria };
+        aviso.value = { titulo: 'Senha redefinida', usuario: resposta.data, senha: resposta.senha_temporaria, expiraEm: resposta.senha_temporaria_expira_em };
     } catch (e) {
         erro.value = e.message;
     } finally {
@@ -171,8 +172,15 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
                             <span class="rounded px-1.5 py-0.5 text-xs font-medium" :class="u.active ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-600'">
                                 {{ u.active ? 'Ativo' : 'Inativo' }}
                             </span>
-                            <span v-if="u.must_change_password && u.active" class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-amber-900" title="Ainda não criou a própria senha">
-                                senha temporária
+                            <span
+                                v-if="u.must_change_password && u.active"
+                                class="ml-1 rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap"
+                                :class="u.senha_temporaria_expirada ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'"
+                                :title="u.senha_temporaria_expirada
+                                    ? 'A senha temporária venceu: use Redefinir senha para gerar outra'
+                                    : `Ainda não criou a própria senha (a temporária vale até ${formatarDataHora(u.senha_temporaria_expira_em)})`"
+                            >
+                                {{ u.senha_temporaria_expirada ? 'senha temporária vencida' : 'senha temporária' }}
                             </span>
                         </td>
                         <td class="px-4 py-2 text-right whitespace-nowrap">
@@ -211,6 +219,7 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
             :nome="aviso.usuario.name"
             :email="aviso.usuario.email"
             :senha="aviso.senha"
+            :expira-em="aviso.expiraEm"
             @fechar="aviso = null"
         />
     </div>

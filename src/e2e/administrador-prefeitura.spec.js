@@ -60,6 +60,7 @@ test('cria um usuário: a senha temporária aparece uma vez e só fecha pelo bot
     primeiraSenha = (await aviso.getByLabel('Senha temporária').innerText()).trim();
     expect(primeiraSenha).toMatch(SENHA_TEMPORARIA);
     await expect(aviso).toContainText('só agora');
+    await expect(aviso).toContainText('A senha vale até');
 
     // Esc e clique fora não fecham: fechar sem querer perderia a senha.
     await page.keyboard.press('Escape');

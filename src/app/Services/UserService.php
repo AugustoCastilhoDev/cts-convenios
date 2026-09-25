@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Support\SenhaTemporaria;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -29,6 +30,7 @@ class UserService
             'role' => $dados['role'],
             'active' => true,
             'must_change_password' => true,
+            'senha_temporaria_expira_em' => $this->prazoDaSenhaTemporaria(),
         ])->save();
 
         return [$usuario, $senha];
@@ -69,7 +71,11 @@ class UserService
     {
         $senha = SenhaTemporaria::gerar();
 
-        $usuario->forceFill(['password' => $senha, 'must_change_password' => true])->save();
+        $usuario->forceFill([
+            'password' => $senha,
+            'must_change_password' => true,
+            'senha_temporaria_expira_em' => $this->prazoDaSenhaTemporaria(),
+        ])->save();
         $usuario->tokens()->delete();
 
         Log::info('Senha redefinida para temporária por um administrador', ['user_id' => $usuario->id, 'por' => $autor->id]);
@@ -84,7 +90,7 @@ class UserService
     public function alterarSenha(User $usuario, string $novaSenha): void
     {
         // A pessoa acabou de escolher a própria senha: a exigência de troca (se havia) termina aqui.
-        $usuario->forceFill(['password' => $novaSenha, 'must_change_password' => false])->save();
+        $usuario->forceFill(['password' => $novaSenha, 'must_change_password' => false, 'senha_temporaria_expira_em' => null])->save();
 
         // Fora de uma requisição por token (ex.: testes com actingAs) não há token "atual" a preservar.
         $atual = $usuario->currentAccessToken();
@@ -99,8 +105,13 @@ class UserService
      */
     public function redefinirPorLink(User $usuario, string $novaSenha): void
     {
-        $usuario->forceFill(['password' => $novaSenha, 'must_change_password' => false])->save();
+        $usuario->forceFill(['password' => $novaSenha, 'must_change_password' => false, 'senha_temporaria_expira_em' => null])->save();
         $usuario->tokens()->delete();
+    }
+
+    private function prazoDaSenhaTemporaria(): Carbon
+    {
+        return now()->addDays(config('seguranca.senha_temporaria_dias'));
     }
 
     /**

@@ -72,6 +72,13 @@ describe('permissões por papel (administrador da prefeitura)', () => {
 describe('SenhaTemporariaModal', () => {
     const props = { titulo: 'Usuário criado', nome: 'Bruno Gestor', email: 'bruno@prefeitura.gov.br', senha: SENHA };
 
+    it('informa até quando a senha vale, quando o servidor diz', () => {
+        const modal = mount(SenhaTemporariaModal, { props: { ...props, expiraEm: '2026-10-03T12:00:00Z' } });
+
+        expect(modal.text()).toMatch(/A senha vale até \d{2}\/10\/2026/);
+        expect(mount(SenhaTemporariaModal, { props }).text()).not.toContain('A senha vale até');
+    });
+
     it('mostra a senha, para quem é, e o aviso de que só aparece uma vez', () => {
         const modal = mount(SenhaTemporariaModal, { props });
 
@@ -220,6 +227,23 @@ describe('tela de usuários', () => {
         expect(linhas[0].text()).toContain('você');
         expect(linhas[1].text()).toContain('Redefinir senha');
         expect(linhas[1].text()).toContain('senha temporária');
+    });
+
+    it('senha temporária vencida aparece em vermelho e a redefinição informa até quando a nova vale', async () => {
+        entrarComo('administrador_prefeitura', 1);
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        const vencida = { ...usuarios[1], senha_temporaria_expirada: true, senha_temporaria_expira_em: '2026-09-20T12:00:00Z' };
+        api.get.mockImplementation((caminho) => Promise.resolve(caminho === '/users' ? { data: [usuarios[0], vencida], meta: { current_page: 1, last_page: 1 } } : { data: [] }));
+        api.post.mockResolvedValue({ data: usuarios[1], senha_temporaria: SENHA, senha_temporaria_expira_em: '2026-10-03T12:00:00Z' });
+        const tela = await abrirTela();
+
+        const selo = tela.findAll('tbody tr')[1].find('span.bg-red-100');
+        expect(selo.text()).toBe('senha temporária vencida');
+
+        await tela.findAll('tbody tr')[1].findAll('button').find((b) => b.text() === 'Redefinir senha').trigger('click');
+        await flushPromises();
+
+        expect(tela.text()).toContain('A senha vale até');
     });
 
     it('redefinir pede confirmação e mostra a nova senha temporária uma vez', async () => {

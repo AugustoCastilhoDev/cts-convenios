@@ -25,6 +25,8 @@ class UserResource extends JsonResource
             'active' => $this->active,
             // Ainda usa a senha temporária: a lista de usuários mostra quem não criou a própria senha.
             'must_change_password' => $this->must_change_password,
+            'senha_temporaria_expira_em' => $this->must_change_password ? $this->senha_temporaria_expira_em : null,
+            'senha_temporaria_expirada' => $this->senhaTemporariaExpirada(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

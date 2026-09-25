@@ -56,7 +56,7 @@ class UserController extends Controller
         [$usuario, $senha] = $this->usuarios->criar($request->validated());
 
         return UserResource::make($usuario->load('tenant'))
-            ->additional(['senha_temporaria' => $senha])
+            ->additional(['senha_temporaria' => $senha, 'senha_temporaria_expira_em' => $usuario->senha_temporaria_expira_em])
             ->response()
             ->setStatusCode(201)
             // A resposta traz a senha temporária: nenhum cache (navegador, proxy) pode guardá-la.
@@ -90,7 +90,7 @@ class UserController extends Controller
         $senha = $this->usuarios->redefinirParaTemporaria($user, $request->user());
 
         return UserResource::make($user->load('tenant'))
-            ->additional(['senha_temporaria' => $senha])
+            ->additional(['senha_temporaria' => $senha, 'senha_temporaria_expira_em' => $user->senha_temporaria_expira_em])
             ->response()
             ->header('Cache-Control', 'no-store');
     }

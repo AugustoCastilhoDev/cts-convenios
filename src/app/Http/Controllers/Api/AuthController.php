@@ -40,6 +40,13 @@ class AuthController extends Controller
             ]);
         }
 
+        // Só depois de a senha conferir: quem não a conhece não descobre nada sobre a conta.
+        if ($user->senhaTemporariaExpirada()) {
+            throw ValidationException::withMessages([
+                'email' => __('A senha temporária venceu. Peça a um administrador para gerar outra ou use "Esqueci minha senha".'),
+            ]);
+        }
+
         $token = $user->createToken($request->string('device_name')->toString());
 
         return response()->json([

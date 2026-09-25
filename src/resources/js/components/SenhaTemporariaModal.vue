@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { formatarDataHora } from '../utils/format';
 import ModalBase from './ModalBase.vue';
 
 // A senha temporária só é conhecida agora: o servidor a guarda apenas como hash e não a mostra de novo.
@@ -9,6 +10,8 @@ defineProps({
     nome: { type: String, required: true },
     email: { type: String, required: true },
     senha: { type: String, required: true },
+    // Instante (ISO) em que a senha deixa de valer.
+    expiraEm: { type: String, default: null },
 });
 const emit = defineEmits(['fechar']);
 
@@ -53,6 +56,9 @@ async function copiar(senha) {
             <li><strong>Esta senha aparece só agora.</strong> Anote ou copie antes de fechar: depois não dá para ver de novo (só gerar outra em "Redefinir senha").</li>
             <li>Repasse por um canal seguro (pessoalmente ou mensagem direta), <strong>nunca</strong> em grupo ou e-mail com várias pessoas.</li>
             <li>No primeiro acesso a pessoa será obrigada a criar a própria senha, e a temporária deixa de valer.</li>
+            <li v-if="expiraEm">
+                A senha vale <strong>até {{ formatarDataHora(expiraEm) }}</strong>. Se a pessoa não entrar até lá, use "Redefinir senha" para gerar outra.
+            </li>
         </ul>
 
         <div class="mt-6 flex justify-end">

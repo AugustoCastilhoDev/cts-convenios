@@ -56,6 +56,7 @@ class User extends Authenticatable implements AuditableContract
             'active' => 'boolean',
             // Senha temporária (conta nova ou redefinida por um administrador): só o UserService liga e desliga.
             'must_change_password' => 'boolean',
+            'senha_temporaria_expira_em' => 'datetime',
         ];
     }
 
@@ -84,6 +85,16 @@ class User extends Authenticatable implements AuditableContract
     public function alertasLidos(): BelongsToMany
     {
         return $this->belongsToMany(AlertaPrazo::class, 'alerta_prazo_leituras')->withPivot('lido_em');
+    }
+
+    /**
+     * A senha temporária venceu: o login é recusado e um administrador precisa gerar outra. Sem prazo
+     * gravado conta como vencida (falha para o lado seguro: quem esquecer de gravar o prazo vai notar).
+     */
+    public function senhaTemporariaExpirada(): bool
+    {
+        return $this->must_change_password
+            && ($this->senha_temporaria_expira_em === null || $this->senha_temporaria_expira_em->isPast());
     }
 
     public function isAdministradorInterno(): bool

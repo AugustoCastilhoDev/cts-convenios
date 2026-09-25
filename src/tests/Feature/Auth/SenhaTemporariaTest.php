@@ -128,6 +128,106 @@ class SenhaTemporariaTest extends TestCase
         $this->assertFalse($gestor->fresh()->must_change_password);
     }
 
+    public function test_a_senha_temporaria_vale_pelo_prazo_configurado_e_a_resposta_informa_ate_quando(): void
+    {
+        config(['seguranca.senha_temporaria_dias' => 3]);
+        $this->travel(now())->days(0);
+
+        $tenant = $this->criarTenant();
+        Sanctum::actingAs($this->criarAdmin());
+        $resposta = $this->postJson('/api/users', ['name' => 'Pessoa Nova', 'email' => 'prazo@exemplo.gov.br', 'role' => 'gestor_convenios', 'tenant_id' => $tenant->id])
+            ->assertCreated();
+
+        $limite = now()->addDays(3);
+        $this->assertEqualsWithDelta($limite->timestamp, User::findOrFail($resposta->json('data.id'))->senha_temporaria_expira_em->timestamp, 5);
+        $this->assertNotNull($resposta->json('senha_temporaria_expira_em'));
+        $resposta->assertJsonPath('data.senha_temporaria_expirada', false);
+    }
+
+    public function test_com_a_senha_temporaria_vencida_o_login_e_recusado_mas_dentro_do_prazo_entra(): void
+    {
+        $usuario = $this->criarPelaApi();
+
+        // Dentro do prazo.
+        $this->travel(6)->days();
+        $this->token($usuario->email, $this->temporaria);
+
+        // Vencida (o padrão são 7 dias).
+        $this->travel(2)->days();
+        $this->app['auth']->forgetGuards();
+        $this->app['auth']->shouldUse('web');
+        $this->postJson('/api/login', ['email' => $usuario->email, 'password' => $this->temporaria, 'device_name' => 'teste'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('email')
+            ->assertJsonFragment(['email' => [__('A senha temporária venceu. Peça a um administrador para gerar outra ou use "Esqueci minha senha".')]]);
+    }
+
+    public function test_senha_errada_de_conta_com_temporaria_vencida_nao_revela_o_vencimento(): void
+    {
+        $usuario = $this->criarPelaApi();
+        $this->travel(8)->days();
+        $this->app['auth']->forgetGuards();
+        $this->app['auth']->shouldUse('web');
+
+        $this->postJson('/api/login', ['email' => $usuario->email, 'password' => 'chute-qualquer', 'device_name' => 'teste'])
+            ->assertUnprocessable()
+            ->assertJsonFragment(['email' => [__('As credenciais informadas não conferem.')]]);
+    }
+
+    public function test_o_administrador_gera_outra_senha_e_o_prazo_recomeca(): void
+    {
+        $usuario = $this->criarPelaApi();
+        $this->travel(8)->days();
+        $this->assertTrue($usuario->fresh()->senhaTemporariaExpirada());
+
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($this->criarAdmin());
+        $lista = $this->getJson('/api/users?busca=nova@exemplo')->assertOk();
+        $lista->assertJsonPath('data.0.senha_temporaria_expirada', true);
+
+        $nova = $this->postJson("/api/users/{$usuario->id}/redefinir-senha")->assertOk()->assertJsonPath('data.senha_temporaria_expirada', false);
+        $this->assertFalse($usuario->fresh()->senhaTemporariaExpirada());
+
+        $this->token($usuario->email, $nova->json('senha_temporaria'));
+    }
+
+    public function test_quem_esqueceu_a_senha_temporaria_vencida_recupera_pelo_link_do_email(): void
+    {
+        $usuario = $this->criarPelaApi();
+        $this->travel(8)->days();
+
+        $token = app('auth.password.broker')->createToken($usuario);
+        $this->app['auth']->forgetGuards();
+
+        $this->postJson('/api/redefinir-senha', ['email' => $usuario->email, 'token' => $token, 'password' => 'MinhaSenhaPropria99', 'password_confirmation' => 'MinhaSenhaPropria99'])
+            ->assertOk();
+
+        $usuario->refresh();
+        $this->assertFalse($usuario->must_change_password);
+        $this->assertNull($usuario->senha_temporaria_expira_em);
+        $this->token($usuario->email, 'MinhaSenhaPropria99');
+    }
+
+    public function test_trocar_a_senha_apaga_o_prazo(): void
+    {
+        $usuario = $this->criarPelaApi();
+        $token = $this->token($usuario->email, $this->temporaria);
+
+        $this->withToken($token)->putJson('/api/me/password', ['current_password' => $this->temporaria, 'password' => 'MinhaSenhaPropria99'])->assertOk();
+
+        $this->assertNull($usuario->fresh()->senha_temporaria_expira_em);
+        $this->assertFalse($usuario->fresh()->senhaTemporariaExpirada());
+    }
+
+    public function test_temporaria_sem_prazo_gravado_conta_como_vencida(): void
+    {
+        $gestor = $this->criarGestor();
+        $gestor->forceFill(['must_change_password' => true, 'senha_temporaria_expira_em' => null])->save();
+
+        $this->assertTrue($gestor->senhaTemporariaExpirada());
+        $this->assertFalse($this->criarGestor()->senhaTemporariaExpirada());
+    }
+
     public function test_conta_comum_e_o_administrador_criado_pelo_comando_nao_sao_afetados(): void
     {
         $gestor = $this->criarGestor();

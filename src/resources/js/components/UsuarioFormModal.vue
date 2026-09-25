@@ -57,7 +57,7 @@ async function salvar() {
                 dados.tenant_id = form.tenant_id;
             }
             const resposta = await api.post('/users', dados);
-            emit('salvo', { usuario: resposta.data, senha: resposta.senha_temporaria });
+            emit('salvo', { usuario: resposta.data, senha: resposta.senha_temporaria, expiraEm: resposta.senha_temporaria_expira_em });
         }
     } catch (e) {
         if (e instanceof ApiError && e.status === 422) {
