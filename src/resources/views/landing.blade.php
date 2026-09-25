@@ -279,7 +279,7 @@
                     <div>
                         <label class="flex items-start gap-3 text-sm text-slate-700">
                             <input type="checkbox" name="aceite" value="1" class="mt-0.5 size-4 rounded border-borda">
-                            <span>Concordo que a Castilho Soluções Digitais use meus dados para retornar este contato.</span>
+                            <span>Concordo que a {{ config('empresa.nome_fantasia') }} use meus dados para retornar este contato, conforme a <a href="/privacidade" class="underline" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
                         </label>
                         <p class="mt-1 hidden text-xs text-red-600" data-erro="aceite"></p>
                     </div>
@@ -293,9 +293,13 @@
     </main>
 
     <footer class="bg-petroleo-claro px-4 py-8 text-sm text-slate-300 sm:px-6">
-        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-            <p>© {{ date('Y') }} Castilho Soluções Digitais. Todos os direitos reservados.</p>
-            <a href="/app/login" class="font-medium text-white hover:underline">Entrar no sistema</a>
+        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-4">
+            <p>© {{ date('Y') }} {{ config('empresa.razao_social') }} · CNPJ {{ config('empresa.cnpj') }}<br class="sm:hidden"> · {{ config('empresa.nome_fantasia') }}</p>
+            <nav class="flex flex-wrap gap-x-6 gap-y-2" aria-label="Documentos e acesso">
+                <a href="/privacidade" class="hover:text-white hover:underline">Privacidade</a>
+                <a href="/termos" class="hover:text-white hover:underline">Termos de uso</a>
+                <a href="/app/login" class="font-medium text-white hover:underline">Entrar no sistema</a>
+            </nav>
         </div>
     </footer>
 </body>

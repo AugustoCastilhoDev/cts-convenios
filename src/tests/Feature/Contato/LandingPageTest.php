@@ -43,7 +43,7 @@ class LandingPageTest extends TestCase
 
     public function test_paginas_publicas_nao_criam_sessao_nem_enviam_cookies(): void
     {
-        foreach (['/', '/app/login'] as $caminho) {
+        foreach (['/', '/privacidade', '/termos', '/app/login'] as $caminho) {
             $resposta = $this->get($caminho)->assertOk();
 
             $this->assertEmpty($resposta->headers->getCookies(), "{$caminho} não deveria enviar cookies");

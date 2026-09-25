@@ -184,7 +184,7 @@ Este é o único bloco que fica **pendente** hoje. Em ordem:
 - [ ] E-mail de alerta recebido em caixa `.gov.br` (e fora do spam).
 - [ ] HTTPS ativo (cadeado) e `/up` respondendo.
 - [ ] Firewall com só 22, 80 e 443.
-- [ ] Texto jurídico revisado (veja abaixo).
+- [ ] Texto jurídico revisado por advogado, campos "a preencher" resolvidos em `/privacidade` e `/termos`, e `TEXTO_JURIDICO_REVISADO=true`.
 
 ## Pendências que não são de código
 
@@ -192,4 +192,5 @@ Este é o único bloco que fica **pendente** hoje. Em ordem:
   trata dados de servidores públicos). Peça revisão de quem entende de LGPD antes de vender.
 - **Contrato/SLA** com as prefeituras: disponibilidade, suporte e o que acontece com os dados se o
   contrato acabar.
-- **Rodapé da landing**: CNPJ, razão social e contato oficial da Castilho Soluções Digitais.
+- **Rodapé da landing**: já mostra razão social e CNPJ. Falta um e-mail de contato oficial (`EMPRESA_EMAIL_CONTATO`).
+- **Páginas `/privacidade` e `/termos`**: minuta pronta. Preencha no `.env.production` `EMPRESA_EMAIL_CONTATO`, `EMPRESA_ENCARREGADO_NOME`, `EMPRESA_ENCARREGADO_EMAIL`, `EMPRESA_HOSPEDAGEM` e `EMPRESA_FORO`. Depois da revisão jurídica, `TEXTO_JURIDICO_REVISADO=true` remove o aviso de minuta.

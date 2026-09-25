@@ -21,6 +21,10 @@ $semEstado = [
 // Página pública (landing): HTML puro, rápido e indexável, sem o pacote do Vue.
 Route::view('/', 'landing')->name('landing')->withoutMiddleware($semEstado);
 
+// Documentos legais: também públicos, indexáveis e sem estado.
+Route::view('/privacidade', 'privacidade')->name('privacidade')->withoutMiddleware($semEstado);
+Route::view('/termos', 'termos')->name('termos')->withoutMiddleware($semEstado);
+
 // O sistema (SPA Vue) mora em /app: qualquer caminho abaixo dele cai no mesmo shell,
 // e o Vue Router decide a tela. A API continua em /api.
 Route::view('/app/{any?}', 'app')->where('any', '.*')->name('app')->withoutMiddleware($semEstado);
