@@ -1,0 +1,41 @@
+# Atualizações automáticas de dependências: o GitHub abre um pull request por semana com o que
+# mudou, o CI (testes, estilo, build, ponta a ponta) roda nele, e você só aprova se estiver verde.
+# Patch e minor vêm agrupados em um PR só, para não virar uma enxurrada; major vem separado.
+version: 2
+
+updates:
+  - package-ecosystem: composer
+    directory: /src
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      composer-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /src
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  # Imagens-base do Docker (PHP, Nginx...): também recebem correções de segurança.
+  - package-ecosystem: docker
+    directory: /docker/prod
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly

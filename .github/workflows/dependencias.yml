@@ -1,0 +1,49 @@
+# ==========================================================================
+# CTS Convênios — vulnerabilidades conhecidas nas dependências de produção
+#
+# Roda a cada push/PR que mexe nas dependências e TODA SEGUNDA-FEIRA: uma falha nova em um pacote
+# aparece mesmo sem ninguém ter mexido no código. Só olha o que vai para produção (--no-dev / --omit=dev):
+# um alerta numa ferramenta de teste não deve travar o pipeline.
+# ==========================================================================
+name: Dependências
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/composer.lock'
+      - 'src/package-lock.json'
+      - '.github/workflows/dependencias.yml'
+  pull_request:
+    paths:
+      - 'src/composer.lock'
+      - 'src/package-lock.json'
+  schedule:
+    - cron: '0 10 * * 1'   # segunda, 10:00 UTC (07:00 em Brasília)
+  workflow_dispatch:
+
+jobs:
+  auditoria:
+    name: Auditoria de segurança (Composer e npm)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # O audit lê só o composer.lock: não precisa instalar nada.
+      - name: Composer audit (produção)
+        run: composer audit --no-dev --locked --no-interaction
+
+      - name: npm audit (produção)
+        run: npm audit --omit=dev
