@@ -37,7 +37,7 @@ class CriarAdministrador extends Command
             ['email' => $email, 'password' => $senha],
             [
                 'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-                'password' => ['required', Password::min(10)->letters()->numbers()],
+                'password' => ['required', Password::defaults()],
             ],
         );
 

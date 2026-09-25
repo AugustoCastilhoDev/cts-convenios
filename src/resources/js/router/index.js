@@ -8,6 +8,24 @@ const routes = [
         component: () => import('../views/LoginView.vue'),
         meta: { guest: true },
     },
+    // "Esqueci minha senha" e o link do e-mail não são só para visitantes: quem já está logado também pode abrir.
+    {
+        path: '/esqueci-senha',
+        name: 'esqueci-senha',
+        component: () => import('../views/EsqueciSenhaView.vue'),
+    },
+    {
+        path: '/redefinir-senha',
+        name: 'redefinir-senha',
+        component: () => import('../views/RedefinirSenhaView.vue'),
+    },
+    // Senha temporária: a única tela liberada até a pessoa criar a própria senha.
+    {
+        path: '/trocar-senha',
+        name: 'trocar-senha',
+        component: () => import('../views/TrocarSenhaView.vue'),
+        meta: { requiresAuth: true },
+    },
     {
         path: '/',
         component: () => import('../layouts/AppLayout.vue'),
@@ -81,6 +99,17 @@ router.beforeEach(async (to) => {
         } catch {
             auth.clear();
             return { name: 'login' };
+        }
+    }
+
+    // Senha temporária: nada além da troca de senha (o servidor também barra com 403 "senha_temporaria").
+    if (auth.isAuthenticated && auth.user) {
+        if (auth.precisaTrocarSenha && to.name !== 'trocar-senha') {
+            return { name: 'trocar-senha' };
+        }
+
+        if (!auth.precisaTrocarSenha && to.name === 'trocar-senha') {
+            return { name: 'dashboard' };
         }
     }
 

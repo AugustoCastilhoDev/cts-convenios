@@ -19,7 +19,7 @@ class UserManagementTest extends TestCase
         return array_merge([
             'name' => 'Servidor Novo',
             'email' => fake()->unique()->safeEmail(),
-            'password' => 'senha1234',
+            'password' => 'senha12345',
             'role' => UserRole::GestorConvenios->value,
             'tenant_id' => $tenantId,
         ], $sobrescreve);
@@ -38,7 +38,7 @@ class UserManagementTest extends TestCase
             ->assertJsonMissingPath('data.password');
 
         $usuario = User::findOrFail($resposta->json('data.id'));
-        $this->assertTrue(password_verify('senha1234', $usuario->password));
+        $this->assertTrue(password_verify('senha12345', $usuario->password));
     }
 
     public function test_gestor_e_fiscal_nao_gerenciam_usuarios(): void

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ConvenioController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\NotificacaoController;
 use App\Http\Controllers\Api\PedidoContatoController;
+use App\Http\Controllers\Api\RedefinicaoSenhaController;
 use App\Http\Controllers\Api\RelatorioConvenioController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\UserController;
@@ -21,11 +22,19 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:lo
 Route::post('/contato', [ContatoController::class, 'store'])->middleware('throttle:contato');
 Route::post('/logout', [AuthController::class, 'logout']);
 
+// "Esqueci minha senha" (público, com limite de tentativas).
+Route::post('/esqueci-senha', [RedefinicaoSenhaController::class, 'solicitar'])->middleware('throttle:esqueci-senha');
+Route::post('/redefinir-senha', [RedefinicaoSenhaController::class, 'redefinir'])->middleware('throttle:redefinir-senha');
+
 // Tudo abaixo exige conta ativa (usuário e prefeitura): o middleware barra
-// tokens ainda válidos de contas desativadas.
+// tokens ainda válidos de contas desativadas. Quem está com senha temporária só passa
+// por /me e /me/password (senha.definitiva barra o resto).
 Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me/password', [AuthController::class, 'alterarSenha']);
+});
+
+Route::middleware(['auth:sanctum', 'conta.ativa', 'senha.definitiva'])->group(function () {
 
     Route::get('/audits', [AuditController::class, 'index']);
 

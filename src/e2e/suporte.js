@@ -69,6 +69,47 @@ export async function limparDadosDeTeste() {
     await api.dispose();
 }
 
+export const CONTA_TROCA = { email: 'e2e.troca@exemplo.gov.br', temporaria: 'TemporariaE2E-2026' };
+
+/**
+ * Deixa a conta de teste da "senha temporária" pronta: cria (ou reativa) e define a senha temporária,
+ * o que também liga a marca de troca obrigatória. Idempotente: pode rodar toda vez.
+ */
+export async function prepararContaComSenhaTemporaria() {
+    const api = await apiAdmin();
+
+    const prefeituras = await (await api.get('/api/tenants')).json();
+    const tenantId = prefeituras.data[0].id;
+
+    const existentes = await (await api.get(`/api/users?busca=${encodeURIComponent(CONTA_TROCA.email)}`)).json();
+    const conta = existentes.data.find((u) => u.email === CONTA_TROCA.email);
+
+    const resposta = conta
+        ? await api.put(`/api/users/${conta.id}`, { data: { password: CONTA_TROCA.temporaria, active: true } })
+        : await api.post('/api/users', {
+            data: { name: 'E2E Troca de Senha', email: CONTA_TROCA.email, password: CONTA_TROCA.temporaria, role: 'gestor_convenios', tenant_id: tenantId },
+        });
+
+    if (!resposta.ok()) {
+        throw new Error(`Não foi possível preparar a conta de teste (${resposta.status()}): ${await resposta.text()}`);
+    }
+
+    await api.dispose();
+}
+
+/** Desativa a conta de teste da senha temporária (usuários não são apagados; a conta fica fora de uso). */
+export async function desativarContaDeTroca() {
+    const api = await apiAdmin();
+    const existentes = await (await api.get(`/api/users?busca=${encodeURIComponent(CONTA_TROCA.email)}`)).json();
+    const conta = (existentes.data ?? []).find((u) => u.email === CONTA_TROCA.email);
+
+    if (conta) {
+        await api.put(`/api/users/${conta.id}`, { data: { active: false } });
+    }
+
+    await api.dispose();
+}
+
 /** Data daqui a N dias no formato de um <input type="date">. */
 export function diasAFrente(dias) {
     return new Date(Date.now() + dias * 86_400_000).toISOString().slice(0, 10);

@@ -13,6 +13,9 @@ Schedule::command('sanctum:prune-expired --hours=24')->daily();
 
 // Motor de Alertas: varredura diária dos prazos dos convênios. Idempotente:
 // rodar mais de uma vez no dia não duplica alertas.
+// Links de "esqueci minha senha" vencidos (60 min) só ocupam espaço na tabela.
+Schedule::command('auth:clear-resets')->daily();
+
 // Guarda dos pedidos de contato da landing page (prazo da Política de Privacidade).
 Schedule::command('contatos:limpar')->dailyAt('03:00')->timezone(config('alertas.timezone'))->onOneServer();
 

@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserRole;
 use App\Http\Resources\UserResource;
+use App\Notifications\RedefinirSenha;
 use App\Policies\UserPolicy;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -43,6 +44,7 @@ class User extends Authenticatable implements AuditableContract
      */
     protected $attributes = [
         'active' => true,
+        'must_change_password' => false,
     ];
 
     protected function casts(): array
@@ -52,7 +54,25 @@ class User extends Authenticatable implements AuditableContract
             'password' => 'hashed',
             'role' => UserRole::class,
             'active' => 'boolean',
+            // Senha temporária (conta nova ou redefinida por um administrador): só o UserService liga e desliga.
+            'must_change_password' => 'boolean',
         ];
+    }
+
+    /**
+     * Para onde vão os e-mails ao usuário. Com ALERTAS_REDIRECIONAR_PARA preenchido (desenvolvimento e
+     * homologação) tudo vai para esse endereço, como já acontece com os alertas: um teste nunca escreve
+     * para o e-mail de outra pessoa. Em produção a variável fica vazia.
+     */
+    public function routeNotificationForMail(): string
+    {
+        return filled(config('alertas.redirecionar_para')) ? config('alertas.redirecionar_para') : $this->email;
+    }
+
+    /** E-mail em português com o link da tela de redefinição (em vez do padrão do framework). */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new RedefinirSenha($token));
     }
 
     public function tenant(): BelongsTo

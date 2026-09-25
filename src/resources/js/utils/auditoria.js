@@ -34,6 +34,7 @@ const rotulosCampos = {
     razao_social: 'Razão social',
     cnpj: 'CNPJ',
     active: 'Ativo',
+    must_change_password: 'Troca de senha obrigatória',
     name: 'Nome',
     email: 'E-mail',
     role: 'Papel',

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CabecalhosDeSeguranca;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\EnsureSenhaDefinitiva;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'conta.ativa' => EnsureAccountIsActive::class,
+            'senha.definitiva' => EnsureSenhaDefinitiva::class,
         ]);
 
         // Atrás do proxy HTTPS (Caddy) o IP e o esquema reais vêm nos cabeçalhos X-Forwarded-*.

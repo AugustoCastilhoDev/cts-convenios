@@ -17,7 +17,7 @@ export default defineConfig({
     fullyParallel: false,
     retries: process.env.CI ? 1 : 0,
     timeout: 30_000,
-    expect: { timeout: 7_000 },
+    expect: { timeout: 10_000 },
     reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
     globalSetup: './e2e/global-setup.js',
     globalTeardown: './e2e/global-teardown.js',

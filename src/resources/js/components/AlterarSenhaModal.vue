@@ -57,7 +57,7 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
             <Campo rotulo="Senha atual" para="senha-atual" :erro="erros.current_password?.[0]">
                 <input id="senha-atual" v-model="form.current_password" type="password" required autocomplete="current-password" :class="campo">
             </Campo>
-            <Campo rotulo="Nova senha" para="senha-nova" ajuda="Mínimo de 8 caracteres, com letras e números." :erro="erros.password?.[0]">
+            <Campo rotulo="Nova senha" para="senha-nova" ajuda="Mínimo de 10 caracteres, com letras e números." :erro="erros.password?.[0]">
                 <input id="senha-nova" v-model="form.password" type="password" required autocomplete="new-password" :class="campo">
             </Campo>
             <Campo rotulo="Repita a nova senha" para="senha-confirmacao" :erro="erros.confirmacao?.[0]">

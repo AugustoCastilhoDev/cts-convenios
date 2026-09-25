@@ -96,7 +96,7 @@ const campo = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2
             <Campo
                 :rotulo="usuario ? 'Nova senha (opcional)' : 'Senha inicial'"
                 para="usuario-senha"
-                :ajuda="usuario ? 'Deixe em branco para manter a senha atual. Trocar a senha desconecta o usuário.' : 'Mínimo de 8 caracteres, com letras e números. Repasse ao usuário por um canal seguro.'"
+                :ajuda="usuario ? 'Deixe em branco para manter a senha atual. Definir uma nova desconecta o usuário e ela será temporária: ele troca no próximo acesso.' : 'Senha temporária: mínimo de 10 caracteres, com letras e números. Repasse por um canal seguro; a pessoa vai criar a própria senha no primeiro acesso.'"
                 :erro="erros.password?.[0]"
             >
                 <input id="usuario-senha" v-model="form.password" type="password" :required="!usuario" autocomplete="new-password" :class="campo">

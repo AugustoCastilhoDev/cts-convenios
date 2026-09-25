@@ -9,6 +9,8 @@ export const useAuthStore = defineStore('auth', {
 
     getters: {
         isAuthenticated: (state) => state.token !== null,
+        // Entrou com a senha que um administrador definiu: precisa criar a própria antes de usar o sistema.
+        precisaTrocarSenha: (state) => state.user?.must_change_password === true,
         // O sino de alertas é de quem trabalha os prazos de uma prefeitura (espelha AlertaPrazoPolicy).
         temSino: (state) => ['gestor_convenios', 'fiscal_controle_interno'].includes(state.user?.role),
         isAdmin: (state) => state.user?.role === 'administrador_interno',

@@ -29,7 +29,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'string', Password::defaults()],
             'role' => ['required', Rule::in(self::papeisPermitidos())],
             'tenant_id' => ['required', 'uuid', Rule::exists('tenants', 'id')],
         ];

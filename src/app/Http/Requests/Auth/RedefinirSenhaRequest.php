@@ -2,12 +2,11 @@
 
 namespace App\Http\Requests\Auth;
 
-use Illuminate\Foundation\Http\Attributes\StopOnFirstFailure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-#[StopOnFirstFailure]
-class AlterarSenhaRequest extends FormRequest
+/** Uso do link recebido por e-mail: token + e-mail + a nova senha (com a regra única de senha). */
+class RedefinirSenhaRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -20,8 +19,9 @@ class AlterarSenhaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'string', 'current_password'],
-            'password' => ['required', 'string', 'different:current_password', Password::defaults()],
+            'token' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ];
     }
 
@@ -31,8 +31,7 @@ class AlterarSenhaRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'current_password.current_password' => 'A senha atual não confere.',
-            'password.different' => 'A nova senha precisa ser diferente da atual.',
+            'password.confirmed' => 'A confirmação não confere com a nova senha.',
         ];
     }
 }

@@ -70,6 +70,20 @@ describe('sessão guardada', () => {
     });
 });
 
+describe('senha temporária', () => {
+    it('só precisa trocar a senha quem o servidor marcou', () => {
+        const auth = useAuthStore();
+
+        expect(auth.precisaTrocarSenha).toBe(false);
+
+        auth.user = { role: 'gestor_convenios', must_change_password: false };
+        expect(auth.precisaTrocarSenha).toBe(false);
+
+        auth.user = { role: 'gestor_convenios', must_change_password: true };
+        expect(auth.precisaTrocarSenha).toBe(true);
+    });
+});
+
 describe('permissões por papel (espelham as policies do servidor)', () => {
     const comPapel = (role) => {
         const auth = useAuthStore();
