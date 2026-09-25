@@ -47,13 +47,17 @@ jobs:
       - name: Estilo do código (Pint)
         run: vendor/bin/pint --test
 
+      # Sem --no-interaction: o PHPUnit chamado pelo "artisan test" no CI não conhece essa opção (e os testes
+      # nunca chegavam a rodar). Se falhar, o resumo vai numa annotation, que aparece até no e-mail de falha
+      # (o log completo só abre com login no GitHub).
       - name: Testes
+        env:
+          NO_COLOR: "1"
         run: |
           php artisan test 2>&1 | tee ../testes.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            # O log completo só abre com login no GitHub; a annotation aparece até no e-mail de falha.
-            resumo=$(grep -v -E '^\s*\.*\s*$' ../testes.log | tail -60 | head -c 6000 | sed 's/[[0-9;]*m//g' | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            resumo=$(tail -60 ../testes.log | paste -sd '|' | tr -d '[:cntrl:]' | tr '%' 'p' | head -c 6000)
             echo "::error title=Testes falharam::${resumo}"
           fi
           exit "$status"
