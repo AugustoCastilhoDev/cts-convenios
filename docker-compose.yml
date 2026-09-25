@@ -101,7 +101,7 @@ services:
   # database: PostgreSQL 15 — dados transacionais multi-tenant
   # ------------------------------------------------------------------------
   database:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     container_name: cts_database
     restart: unless-stopped
     environment:
