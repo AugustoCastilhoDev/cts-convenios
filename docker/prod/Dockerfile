@@ -52,7 +52,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-in
 # --------------------------------------------------------------------------
 # assets: compila o front-end (Vue + Tailwind) com o Vite.
 # --------------------------------------------------------------------------
-FROM node:22-alpine AS assets
+FROM node:25-alpine AS assets
 
 WORKDIR /var/www/html
 
