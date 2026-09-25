@@ -112,11 +112,60 @@ Agende para todo dia (`crontab -e`):
 30 2 * * * cd /caminho/do/projeto && ./scripts/backup.sh >> backups/backup.log 2>&1
 ```
 
-> **Um backup no mesmo servidor não protege contra a perda do servidor.** Copie a pasta `backups/`
-> para outro lugar (outro servidor, armazenamento em nuvem) e, uma vez por trimestre, **teste
-> restaurar** em uma máquina à parte. Backup nunca testado é esperança, não backup.
+> **Um backup no mesmo servidor não protege contra a perda do servidor.** Configure a cópia para a
+> nuvem (abaixo) e, uma vez por trimestre, **teste restaurar** em uma máquina à parte. Backup nunca
+> testado é esperança, não backup.
 
-**Restaurar o banco:**
+### Cópia para a nuvem (Cloudflare R2)
+
+Com as variáveis `BACKUP_S3_*` preenchidas, o `backup.sh` envia cada backup para um bucket **já
+criptografado no servidor** (AES-256, com a `BACKUP_SENHA`): o bucket nunca guarda dados pessoais
+em texto aberto. Sem elas, o script só avisa que o backup ficou local. Se o envio falhar, o backup
+local é feito mesmo assim e o script termina com **erro** (o cron ou o monitor percebe).
+
+**Configurar (uma vez):**
+
+1. No painel da Cloudflare: **R2 Object Storage** (pode pedir um cartão para ativar; confira a cota
+   gratuita e os preços no site deles) e **Create bucket** (ex.: `cts-backups`). Deixe **privado**.
+2. Na página do R2 copie o **Account ID**. Em **Manage API tokens > Create API token**, permissão
+   **Object Read & Write**, limitada **só a esse bucket**. Guarde o *Access Key ID* e o *Secret Access
+   Key* (o segredo só aparece uma vez).
+3. Gere a senha de criptografia e **guarde uma cópia fora do servidor** (gerenciador de senhas), como a
+   `APP_KEY`: sem ela ninguém consegue ler os backups da nuvem.
+   ```bash
+   openssl rand -base64 32
+   ```
+4. No `.env.production`:
+   ```
+   BACKUP_S3_ENDPOINT=https://SEU_ACCOUNT_ID.r2.cloudflarestorage.com
+   BACKUP_S3_BUCKET=cts-backups
+   BACKUP_S3_ACCESS_KEY_ID=...
+   BACKUP_S3_SECRET_ACCESS_KEY=...
+   BACKUP_SENHA=...
+   ```
+5. Rode `./scripts/backup.sh` uma vez e confira com `./scripts/backup-nuvem.sh listar`.
+
+Na nuvem os backups ficam 30 dias (`BACKUP_NUVEM_RETENCAO_DIAS`); no servidor, 14 (`RETENCAO_DIAS`).
+Os arquivos ficam com a extensão `.enc`. O envio usa o rclone dentro de um container (nada a instalar
+além do Docker e do `openssl`).
+
+> Limite conhecido: o token que envia também pode apagar. Quem invadir o servidor conseguiria apagar
+> os backups da nuvem. Para reduzir esse risco, faça de vez em quando uma cópia manual para outro lugar.
+
+**Restaurar a partir da nuvem** (servidor novo ou perda de dados):
+
+```bash
+./scripts/backup-nuvem.sh listar                                     # escolha os arquivos
+./scripts/backup-nuvem.sh baixar banco-AAAA-MM-DD_HHMMSS.sql.gz.enc  # baixa e descriptografa em backups/restaurar/
+./scripts/backup-nuvem.sh baixar documentos-AAAA-MM-DD_HHMMSS.tar.gz.enc
+./scripts/restaurar.sh backups/restaurar/banco-AAAA-MM-DD_HHMMSS.sql.gz
+```
+
+Os documentos voltam pelo comando "Restaurar os documentos" (abaixo), usando o arquivo de
+`backups/restaurar/`. Já foi ensaiado de ponta a ponta: apagando os dados e os backups locais e
+recuperando tudo só pela nuvem.
+
+**Restaurar o banco** (de um backup local):
 
 ```bash
 ./scripts/restaurar.sh backups/banco-AAAA-MM-DD_HHMMSS.sql.gz

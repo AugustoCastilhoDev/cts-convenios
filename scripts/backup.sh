@@ -45,7 +45,22 @@ for arquivo in "$BACKUP_DIR/banco-$AGORA.sql.gz" "$BACKUP_DIR/documentos-$AGORA.
     [ -s "$arquivo" ] || { echo "ERRO: $arquivo está vazio." >&2; exit 1; }
 done
 
+# Cópia criptografada para fora do servidor (Cloudflare R2/S3). Sem configuração, só avisa.
+# Uma falha aqui não impede a limpeza local: o script termina com erro no fim, para o cron/monitor perceber.
+ERRO_NUVEM=0
+echo "[$AGORA] Cópia para a nuvem..."
+if BACKUP_DIR="$BACKUP_DIR" ./scripts/backup-nuvem.sh enviar "$BACKUP_DIR/banco-$AGORA.sql.gz" "$BACKUP_DIR/documentos-$AGORA.tar.gz"; then
+    BACKUP_DIR="$BACKUP_DIR" ./scripts/backup-nuvem.sh limpar || ERRO_NUVEM=1
+else
+    ERRO_NUVEM=1
+fi
+
 echo "[$AGORA] Removendo backups com mais de $RETENCAO_DIAS dias..."
 find "$BACKUP_DIR" -maxdepth 1 -type f \( -name 'banco-*.sql.gz' -o -name 'documentos-*.tar.gz' \) -mtime "+$RETENCAO_DIAS" -delete
+
+if [ "$ERRO_NUVEM" -ne 0 ]; then
+    echo "[$AGORA] ERRO: o backup local foi feito, mas a cópia para a nuvem FALHOU." >&2
+    exit 1
+fi
 
 echo "[$AGORA] Backup concluído em $BACKUP_DIR"
