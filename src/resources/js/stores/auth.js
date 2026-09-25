@@ -11,6 +11,8 @@ export const useAuthStore = defineStore('auth', {
         isAuthenticated: (state) => state.token !== null,
         // Entrou com a senha que um administrador definiu: precisa criar a própria antes de usar o sistema.
         precisaTrocarSenha: (state) => state.user?.must_change_password === true,
+        // Administrador que ainda não ativou a verificação em duas etapas: só usa a tela de ativação até ativar.
+        precisaAtivarDoisFatores: (state) => state.user?.two_factor_obrigatorio === true && state.user?.two_factor_ativo !== true,
         // O sino de alertas é de quem trabalha os prazos de uma prefeitura (espelha AlertaPrazoPolicy).
         temSino: (state) => ['administrador_prefeitura', 'gestor_convenios', 'fiscal_controle_interno'].includes(state.user?.role),
         // Super administrador (equipe da plataforma) e administrador da prefeitura (a pessoa de confiança do município).
@@ -25,6 +27,10 @@ export const useAuthStore = defineStore('auth', {
     },
 
     actions: {
+        /**
+         * Primeiro passo do login. Sem 2FA já entra e devolve null. Com 2FA o servidor ainda não emitiu o token:
+         * devolve o "desafio" que a tela entrega, junto com o código do app, a verificarDoisFatores().
+         */
         async login(email, password) {
             const data = await api.post('/login', {
                 email,
@@ -32,6 +38,21 @@ export const useAuthStore = defineStore('auth', {
                 device_name: 'spa-web',
             });
 
+            if (data.dois_fatores) {
+                return { desafio: data.desafio };
+            }
+
+            this.iniciarSessao(data);
+
+            return null;
+        },
+
+        /** Segundo passo: o desafio do primeiro + o código de 6 dígitos do app (ou um código de recuperação). */
+        async verificarDoisFatores(desafio, codigo) {
+            this.iniciarSessao(await api.post('/login/2fa', { desafio, codigo }));
+        },
+
+        iniciarSessao(data) {
             this.token = data.token;
             this.user = data.user;
             tokenStorage.set(data.token);

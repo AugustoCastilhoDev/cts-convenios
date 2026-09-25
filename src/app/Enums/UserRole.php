@@ -61,6 +61,16 @@ enum UserRole: string
         return in_array($this, [self::AdministradorPrefeitura, self::GestorConvenios], true);
     }
 
+    /**
+     * Quem tem poder sobre o acesso de outras pessoas precisa da verificação em duas etapas: o super
+     * administrador (todas as prefeituras) e o administrador da prefeitura (todas as contas dela).
+     * Para os demais perfis ela é opcional.
+     */
+    public function exigeDoisFatores(): bool
+    {
+        return in_array($this, [self::AdministradorInterno, self::AdministradorPrefeitura], true);
+    }
+
     public function administraPrefeitura(): bool
     {
         return $this === self::AdministradorPrefeitura;

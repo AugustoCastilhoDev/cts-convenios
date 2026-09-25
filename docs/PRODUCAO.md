@@ -74,6 +74,11 @@ Cole o resultado (`base64:...`) em `APP_KEY=`.
 docker compose --env-file .env.production -f docker-compose.prod.yml exec app php artisan admin:criar seu@email.com --nome="Seu Nome"
 ```
 
+No **primeiro login** esse administrador é levado a ativar a **verificação em duas etapas** (app autenticador
+no celular: Google Authenticator, Microsoft Authenticator, Authy ou gerenciador de senhas) e a guardar os 8
+códigos de recuperação. Sem isso o sistema não abre: é obrigatório para o super administrador e para o
+administrador da prefeitura (`DOIS_FATORES_OBRIGATORIO=true` no `.env.production`; só o desenvolvimento usa `false`).
+
 > Nunca rode `db:seed` em produção: ele cria usuários de demonstração com senha `password`. O
 > sistema recusa (o seeder para com erro), mas não conte com isso como única barreira.
 
@@ -199,7 +204,27 @@ recupera o atraso na próxima varredura (o alerta sai uma vez, no marco mais pr�
 - Atualizações automáticas de segurança do sistema (`unattended-upgrades`) e `fail2ban` para o SSH.
 - O arquivo `.env.production` só legível pelo dono (`chmod 600 .env.production`).
 - Trocar as senhas e a `RESEND_API_KEY` se alguém que os conhecia sair da equipe.
-- A `APP_KEY` não muda depois que o sistema está em uso.
+- A `APP_KEY` não muda depois que o sistema está em uso. Ela também protege o segredo do 2FA e os códigos de
+  recuperação gravados no banco: **sem a mesma `APP_KEY`, uma restauração de backup deixa todos sem 2FA funcionando**.
+
+### Verificação em duas etapas (2FA): quando alguém perde o celular
+
+- **Gestor ou fiscal** (2FA opcional): o administrador da prefeitura clica em **Redefinir 2FA** na lista de usuários (pede a senha dele).
+- **Administrador da prefeitura**: só o super administrador redefine (mesmo botão). Um administrador não desliga a proteção do colega.
+- **Super administrador**: só pelo servidor. Sem tela e sem API, de propósito:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml exec app php artisan admin:redefinir-2fa seu@email.com
+```
+
+Em todos os casos as sessões da pessoa caem e, onde o 2FA é obrigatório, ela configura o app de novo no próximo acesso.
+O comando registra a ação no log da aplicação (o Auditing ignora o console). Tenha **pelo menos dois** super
+administradores, ou os códigos de recuperação do único em lugar seguro.
+
+### Senha temporária
+
+A senha gerada ao criar a conta (ou em "Redefinir senha") vale **7 dias** (`SENHA_TEMPORARIA_VALIDADE_DIAS`). Vencida, o
+login é recusado e a lista de usuários mostra "senha temporária vencida": o administrador usa **Redefinir senha** para gerar outra.
 
 <a id="quando-o-dominio-existir"></a>
 ## Quando o domínio existir
@@ -230,6 +255,7 @@ Este é o único bloco que fica **pendente** hoje. Em ordem:
 - [ ] `APP_KEY` guardada fora do servidor.
 - [ ] Backup diário agendado **e uma restauração testada**.
 - [ ] Administrador criado com senha forte; senha de teste `password` não existe no banco.
+- [ ] `DOIS_FATORES_OBRIGATORIO=true` e o 2FA do super administrador ativado (com os códigos de recuperação guardados fora do servidor).
 - [ ] E-mail de alerta recebido em caixa `.gov.br` (e fora do spam).
 - [ ] HTTPS ativo (cadeado) e `/up` respondendo.
 - [ ] Firewall com só 22, 80 e 443.

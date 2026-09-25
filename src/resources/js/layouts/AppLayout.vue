@@ -161,6 +161,15 @@ const itemInativo = 'text-slate-300 hover:bg-white/5 hover:text-white';
                     </span>
                 </div>
 
+                <RouterLink
+                    :to="{ name: 'seguranca' }"
+                    :class="[itemBase, route.name === 'seguranca' ? itemAtivo : itemInativo]"
+                    :title="recolhido ? 'Segurança da conta' : null"
+                    :aria-current="route.name === 'seguranca' ? 'page' : null"
+                >
+                    <Icone nome="auditoria" />
+                    <span :class="{ 'lg:hidden': recolhido }">Segurança da conta</span>
+                </RouterLink>
                 <button :class="[itemBase, itemInativo]" :title="recolhido ? 'Alterar senha' : null" @click="alterandoSenha = true">
                     <Icone nome="chave" />
                     <span :class="{ 'lg:hidden': recolhido }">Alterar senha</span>

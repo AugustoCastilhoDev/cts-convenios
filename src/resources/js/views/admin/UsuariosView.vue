@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { api } from '../../services/api';
+import ConfirmarSenhaModal from '../../components/ConfirmarSenhaModal.vue';
 import Paginacao from '../../components/Paginacao.vue';
 import SenhaTemporariaModal from '../../components/SenhaTemporariaModal.vue';
 import UsuarioFormModal from '../../components/UsuarioFormModal.vue';
@@ -28,6 +29,9 @@ const emEdicao = ref(null);
 // Senha temporária a mostrar (criação ou redefinição): { titulo, usuario, senha }.
 const aviso = ref(null);
 const redefinindo = ref(null);
+// Conta cujo 2FA está sendo redefinido (pede a senha de quem redefine) e o aviso do resultado.
+const redefinindoDoisFatores = ref(null);
+const avisoDoisFatores = ref('');
 
 async function carregar() {
     carregando.value = true;
@@ -82,6 +86,22 @@ async function redefinirSenha(usuario) {
     } finally {
         redefinindo.value = null;
     }
+}
+
+// Perdeu o celular e os códigos de recuperação. O servidor decide (UserPolicy): o super administrador redefine o de
+// qualquer conta; o administrador da prefeitura, o de gestores e fiscais (o de outro administrador, só o super).
+function podeRedefinirDoisFatores(usuario) {
+    return usuario.two_factor_ativo
+        && usuario.id !== auth.user?.id
+        && (auth.isAdmin || usuario.role !== 'administrador_prefeitura');
+}
+
+const redefinirDoisFatores = ({ password }) => api.post(`/users/${redefinindoDoisFatores.value.id}/redefinir-2fa`, { password });
+
+function doisFatoresRedefinido() {
+    avisoDoisFatores.value = `Verificação em duas etapas de ${redefinindoDoisFatores.value.name} redefinida. A pessoa foi desconectada e configura o app de novo no próximo acesso.`;
+    redefinindoDoisFatores.value = null;
+    carregar();
 }
 
 // Mudou um filtro: volta para a primeira página. A busca espera o usuário parar de digitar.
@@ -146,6 +166,7 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
         </div>
 
         <div v-if="erro" role="alert" class="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ erro }}</div>
+        <p v-if="avisoDoisFatores" role="status" class="mt-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">{{ avisoDoisFatores }}</p>
 
         <div class="mt-4 overflow-x-auto cartao" :class="{ 'opacity-60': carregando }">
             <table class="w-full text-left text-sm">
@@ -182,6 +203,20 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
                             >
                                 {{ u.senha_temporaria_expirada ? 'senha temporária vencida' : 'senha temporária' }}
                             </span>
+                            <span
+                                v-if="u.two_factor_ativo"
+                                class="ml-1 rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-green-800"
+                                title="Verificação em duas etapas ativa"
+                            >
+                                2FA
+                            </span>
+                            <span
+                                v-else-if="u.two_factor_obrigatorio && u.active"
+                                class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-amber-900"
+                                title="Obrigatória para este perfil e ainda não ativada"
+                            >
+                                2FA pendente
+                            </span>
                         </td>
                         <td class="px-4 py-2 text-right whitespace-nowrap">
                             <button class="text-brand-700 hover:underline" @click="abrir(u)">Editar</button>
@@ -192,6 +227,13 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
                                 @click="redefinirSenha(u)"
                             >
                                 {{ redefinindo === u.id ? 'Redefinindo…' : 'Redefinir senha' }}
+                            </button>
+                            <button
+                                v-if="podeRedefinirDoisFatores(u)"
+                                class="ml-4 text-brand-700 hover:underline"
+                                @click="redefinindoDoisFatores = u; avisoDoisFatores = ''"
+                            >
+                                Redefinir 2FA
                             </button>
                         </td>
                     </tr>
@@ -211,6 +253,16 @@ const filtro = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm fo
             :prefeitura-inicial="filtroPrefeitura"
             @salvo="salvo"
             @fechar="formulario = false"
+        />
+
+        <ConfirmarSenhaModal
+            v-if="redefinindoDoisFatores"
+            :titulo="`Redefinir 2FA de ${redefinindoDoisFatores.name}`"
+            texto="Use quando a pessoa perdeu o celular e os códigos de recuperação. Ela será desconectada e precisará configurar o app autenticador de novo. Confirme com a sua senha."
+            rotulo-botao="Redefinir 2FA"
+            :acao="redefinirDoisFatores"
+            @concluido="doisFatoresRedefinido"
+            @fechar="redefinindoDoisFatores = null"
         />
 
         <SenhaTemporariaModal

@@ -26,6 +26,13 @@ const routes = [
         component: () => import('../views/TrocarSenhaView.vue'),
         meta: { requiresAuth: true },
     },
+    // 2FA obrigatório dos administradores: a única tela liberada até ativarem (depois da troca da senha temporária).
+    {
+        path: '/ativar-2fa',
+        name: 'ativar-2fa',
+        component: () => import('../views/AtivarDoisFatoresView.vue'),
+        meta: { requiresAuth: true },
+    },
     {
         path: '/',
         component: () => import('../layouts/AppLayout.vue'),
@@ -64,6 +71,11 @@ const routes = [
                 name: 'admin-auditoria',
                 component: () => import('../views/admin/AuditoriaView.vue'),
                 meta: { requiresGestaoUsuarios: true },
+            },
+            {
+                path: 'seguranca',
+                name: 'seguranca',
+                component: () => import('../views/SegurancaView.vue'),
             },
             {
                 path: 'convenios/:id',
@@ -109,6 +121,15 @@ router.beforeEach(async (to) => {
         }
 
         if (!auth.precisaTrocarSenha && to.name === 'trocar-senha') {
+            return { name: 'dashboard' };
+        }
+
+        // Depois da senha, o 2FA: obrigatório para os administradores (o servidor também barra com 403 "2fa_obrigatorio").
+        if (!auth.precisaTrocarSenha && auth.precisaAtivarDoisFatores && to.name !== 'ativar-2fa') {
+            return { name: 'ativar-2fa' };
+        }
+
+        if (!auth.precisaAtivarDoisFatores && to.name === 'ativar-2fa') {
             return { name: 'dashboard' };
         }
     }

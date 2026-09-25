@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ContatoController;
 use App\Http\Controllers\Api\ContratoVinculadoController;
 use App\Http\Controllers\Api\ConvenioController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DoisFatoresController;
 use App\Http\Controllers\Api\NotificacaoController;
 use App\Http\Controllers\Api\PedidoContatoController;
 use App\Http\Controllers\Api\RedefinicaoSenhaController;
@@ -17,6 +18,8 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+// 2º passo do login de quem tem 2FA: o desafio do passo 1 + o código do app.
+Route::post('/login/2fa', [AuthController::class, 'loginDoisFatores'])->middleware('throttle:login-2fa');
 
 // Formulário da landing page (público).
 Route::post('/contato', [ContatoController::class, 'store'])->middleware('throttle:contato');
@@ -34,7 +37,16 @@ Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
     Route::put('/me/password', [AuthController::class, 'alterarSenha']);
 });
 
-Route::middleware(['auth:sanctum', 'conta.ativa', 'senha.definitiva'])->group(function () {
+// Ativação e manejo do 2FA: liberados a quem ainda precisa ativar (dois-fatores fica de fora), mas só depois de a
+// senha temporária ter sido trocada. Cada tentativa de senha aqui conta no limite "dois-fatores".
+Route::middleware(['auth:sanctum', 'conta.ativa', 'senha.definitiva', 'throttle:dois-fatores'])->prefix('2fa')->group(function () {
+    Route::post('/iniciar', [DoisFatoresController::class, 'iniciar']);
+    Route::post('/confirmar', [DoisFatoresController::class, 'confirmar']);
+    Route::post('/codigos-recuperacao', [DoisFatoresController::class, 'gerarCodigos']);
+    Route::delete('/', [DoisFatoresController::class, 'desativar']);
+});
+
+Route::middleware(['auth:sanctum', 'conta.ativa', 'senha.definitiva', 'dois-fatores'])->group(function () {
 
     Route::get('/audits', [AuditController::class, 'index']);
     Route::get('/audits/exportar', [AuditController::class, 'exportar']);
@@ -62,6 +74,7 @@ Route::middleware(['auth:sanctum', 'conta.ativa', 'senha.definitiva'])->group(fu
         Route::get('/{user}', [UserController::class, 'show']);
         Route::put('/{user}', [UserController::class, 'update']);
         Route::post('/{user}/redefinir-senha', [UserController::class, 'redefinirSenha']);
+        Route::post('/{user}/redefinir-2fa', [UserController::class, 'redefinirDoisFatores']);
     });
 
     Route::prefix('convenios')->group(function () {

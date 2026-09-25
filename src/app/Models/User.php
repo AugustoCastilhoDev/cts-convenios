@@ -8,10 +8,12 @@ use App\Http\Resources\UserResource;
 use App\Notifications\RedefinirSenha;
 use App\Policies\UserPolicy;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Attributes\UseResource;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -25,16 +27,22 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * tenant_id, role e active nunca são preenchíveis em massa: papel, prefeitura
  * e situação de um usuário só podem ser definidos por um Administrador
  * Interno através do UserService, nunca por payload direto do cliente.
- * password e remember_token ficam fora da trilha de auditoria (config/audit.php).
+ * Senha, segredo e códigos de recuperação do 2FA ficam fora da trilha de auditoria ($auditExclude); a ativação
+ * e a desativação do 2FA aparecem nela pela data de confirmação.
  */
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_ultimo_passo'])]
+// A tela decide o que mostrar (Segurança, aviso de 2FA obrigatório) a partir destes dois indicadores.
+#[Appends(['two_factor_ativo', 'two_factor_obrigatorio', 'two_factor_codigos_restantes'])]
 #[UsePolicy(UserPolicy::class)]
 #[UseResource(UserResource::class)]
 class User extends Authenticatable implements AuditableContract
 {
     /** @use HasFactory<UserFactory> */
     use Auditable, HasApiTokens, HasFactory, Notifiable;
+
+    /** @var array<int, string> */
+    protected $auditExclude = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_ultimo_passo'];
 
     /**
      * Espelha o default da coluna: um User recém-criado em memória (antes de
@@ -57,6 +65,10 @@ class User extends Authenticatable implements AuditableContract
             // Senha temporária (conta nova ou redefinida por um administrador): só o UserService liga e desliga.
             'must_change_password' => 'boolean',
             'senha_temporaria_expira_em' => 'datetime',
+            // Segredo do app autenticador e hashes dos códigos de recuperação: criptografados com a APP_KEY.
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -95,6 +107,40 @@ class User extends Authenticatable implements AuditableContract
     {
         return $this->must_change_password
             && ($this->senha_temporaria_expira_em === null || $this->senha_temporaria_expira_em->isPast());
+    }
+
+    /** O 2FA está valendo: a pessoa já provou ter o app autenticador (o segredo sozinho, sem confirmação, não conta). */
+    public function doisFatoresAtivo(): bool
+    {
+        return $this->two_factor_secret !== null && $this->two_factor_confirmed_at !== null;
+    }
+
+    /** O perfil é obrigado a usar o 2FA (e a regra está ligada; só o desenvolvimento a desliga). */
+    public function exigeDoisFatores(): bool
+    {
+        return config('seguranca.dois_fatores_obrigatorio') && $this->role->exigeDoisFatores();
+    }
+
+    /** Falta ativar: até isso, a API só libera o perfil, a troca de senha, a ativação do 2FA e a saída. */
+    public function precisaConfigurarDoisFatores(): bool
+    {
+        return $this->exigeDoisFatores() && ! $this->doisFatoresAtivo();
+    }
+
+    protected function twoFactorAtivo(): Attribute
+    {
+        return Attribute::get(fn () => $this->doisFatoresAtivo());
+    }
+
+    protected function twoFactorObrigatorio(): Attribute
+    {
+        return Attribute::get(fn () => $this->exigeDoisFatores());
+    }
+
+    /** Quantos códigos de recuperação ainda não foram usados (a tela avisa quando estão acabando). */
+    protected function twoFactorCodigosRestantes(): Attribute
+    {
+        return Attribute::get(fn () => $this->doisFatoresAtivo() ? count($this->two_factor_recovery_codes ?? []) : 0);
     }
 
     public function isAdministradorInterno(): bool

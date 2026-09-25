@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ConfirmarSenhaRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\DoisFatoresService;
 use App\Services\UserService;
 use App\Support\Paginacao;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +27,10 @@ use Illuminate\Routing\Attributes\Controllers\Middleware;
 #[Middleware('auth:sanctum')]
 class UserController extends Controller
 {
-    public function __construct(private readonly UserService $usuarios) {}
+    public function __construct(
+        private readonly UserService $usuarios,
+        private readonly DoisFatoresService $doisFatores,
+    ) {}
 
     #[Authorize('viewAny', User::class)]
     public function index(Request $request): AnonymousResourceCollection
@@ -93,5 +98,20 @@ class UserController extends Controller
             ->additional(['senha_temporaria' => $senha, 'senha_temporaria_expira_em' => $user->senha_temporaria_expira_em])
             ->response()
             ->header('Cache-Control', 'no-store');
+    }
+
+    /**
+     * Quem perdeu o celular e os códigos de recuperação: apaga o 2FA da conta e derruba as sessões.
+     * Pede a senha de quem está redefinindo (um token roubado não basta para tirar a proteção de outra conta).
+     * Onde o 2FA é obrigatório, a pessoa ativa de novo no próximo acesso.
+     */
+    #[Authorize('redefinirDoisFatores', 'user')]
+    public function redefinirDoisFatores(ConfirmarSenhaRequest $request, User $user): UserResource
+    {
+        abort_if($user->isAdministradorInterno(), 404);
+
+        $this->doisFatores->redefinir($user, $request->user());
+
+        return UserResource::make($user->load('tenant'));
     }
 }

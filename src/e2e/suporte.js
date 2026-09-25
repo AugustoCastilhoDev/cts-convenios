@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { request } from '@playwright/test';
 
 export const PREFIXO = 'E2E';
@@ -88,6 +89,10 @@ async function prepararConta(email, role, nome) {
 
     let resposta;
     if (conta) {
+        // Sobra de uma rodada anterior: com o 2FA ainda ativo o login não devolveria token.
+        if (conta.two_factor_ativo) {
+            await api.post(`/api/users/${conta.id}/redefinir-2fa`, { data: { password: contas.admin.senha } });
+        }
         await api.put(`/api/users/${conta.id}`, { data: { active: true, role } });
         resposta = await api.post(`/api/users/${conta.id}/redefinir-senha`);
     } else {
@@ -110,23 +115,59 @@ export const prepararContaComSenhaTemporaria = () => prepararConta(CONTA_TROCA.e
  * Administrador da prefeitura de teste, já com a senha própria definida (a temporária foi trocada por API),
  * e o token dele para abrir o sistema sem passar pela tela de login (que tem limite de tentativas).
  */
-export async function prepararAdministradorDaPrefeitura() {
-    const temporaria = await prepararConta(CONTA_ADMIN_PREFEITURA.email, 'administrador_prefeitura', 'E2E Administrador da Prefeitura');
+export const prepararAdministradorDaPrefeitura = () => prepararContaComSenhaPropria(
+    CONTA_ADMIN_PREFEITURA.email, 'administrador_prefeitura', 'E2E Administrador da Prefeitura', CONTA_ADMIN_PREFEITURA.senhaPropria,
+);
+
+/** Conta de teste com a senha própria já definida (a temporária foi trocada por API) e o token dela. */
+async function prepararContaComSenhaPropria(email, role, nome, senhaPropria) {
+    const temporaria = await prepararConta(email, role, nome);
     const api = await request.newContext({ baseURL: baseURL(), extraHTTPHeaders: { Accept: 'application/json' } });
 
-    const login = await api.post('/api/login', { data: { email: CONTA_ADMIN_PREFEITURA.email, password: temporaria, device_name: 'e2e' } });
+    const login = await api.post('/api/login', { data: { email, password: temporaria, device_name: 'e2e' } });
     const { token } = await login.json();
 
     const troca = await request.newContext({ baseURL: baseURL(), extraHTTPHeaders: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
-    const resposta = await troca.put('/api/me/password', { data: { current_password: temporaria, password: CONTA_ADMIN_PREFEITURA.senhaPropria } });
+    const resposta = await troca.put('/api/me/password', { data: { current_password: temporaria, password: senhaPropria } });
     if (!resposta.ok()) {
-        throw new Error(`Não foi possível definir a senha do administrador de teste (${resposta.status()}).`);
+        throw new Error(`Não foi possível definir a senha da conta de teste ${email} (${resposta.status()}).`);
     }
 
     await api.dispose();
     await troca.dispose();
 
     return token;
+}
+
+export const CONTA_DOIS_FATORES = { email: 'e2e.dois.fatores@exemplo.gov.br', senhaPropria: 'SenhaDoDoisFatores-2026' };
+
+/** Gestor de teste, sem 2FA e com senha própria, para o teste de ativação do 2FA pela tela. */
+export const prepararContaParaDoisFatores = () => prepararContaComSenhaPropria(
+    CONTA_DOIS_FATORES.email, 'gestor_convenios', 'E2E Dois Fatores', CONTA_DOIS_FATORES.senhaPropria,
+);
+
+const ALFABETO_BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+/**
+ * Código de 6 dígitos do app autenticador (TOTP, RFC 6238) para o segredo mostrado na tela. O servidor
+ * aceita um período de 30 s para cada lado, e cada período uma vez só: passe deslocamento 1 para o
+ * código do período seguinte quando o atual já foi usado.
+ */
+export function codigoTotp(segredo, deslocamento = 0) {
+    let bits = '';
+    for (const letra of segredo.replace(/\s+/g, '').toUpperCase()) {
+        bits += ALFABETO_BASE32.indexOf(letra).toString(2).padStart(5, '0');
+    }
+    const chave = Buffer.from(bits.match(/.{8}/g).map((byte) => parseInt(byte, 2)));
+
+    const contador = Buffer.alloc(8);
+    contador.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30_000) + deslocamento));
+
+    const hmac = createHmac('sha1', chave).update(contador).digest();
+    const inicio = hmac[hmac.length - 1] & 0xf;
+    const numero = (hmac.readUInt32BE(inicio) & 0x7fffffff) % 1_000_000;
+
+    return String(numero).padStart(6, '0');
 }
 
 /** Abre o sistema com um token qualquer (sem passar pela tela de login). */

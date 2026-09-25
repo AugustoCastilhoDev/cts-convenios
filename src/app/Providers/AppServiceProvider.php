@@ -56,6 +56,16 @@ class AppServiceProvider extends ServiceProvider
                 'message' => 'Muitas tentativas de login. Aguarde um minuto e tente novamente.',
             ], 429)));
 
+        // 2º passo do login (código do 2FA): por IP. Além disto há 5 tentativas por desafio e 10 erros por pessoa.
+        RateLimiter::for('login-2fa', fn (Request $request) => Limit::perMinute(10)
+            ->by($request->ip())
+            ->response(fn () => response()->json([
+                'message' => 'Muitas tentativas de verificação. Aguarde um minuto e tente novamente.',
+            ], 429)));
+
+        // Ativar/desativar o 2FA pede a senha: um token roubado não pode ficar chutando a senha.
+        RateLimiter::for('dois-fatores', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
+
         // "Esqueci minha senha": barra quem tenta encher a caixa de e-mail de alguém (por e-mail) e
         // quem varre e-mails de um mesmo IP. A resposta é igual para e-mail existente ou não.
         RateLimiter::for('esqueci-senha', fn (Request $request) => [

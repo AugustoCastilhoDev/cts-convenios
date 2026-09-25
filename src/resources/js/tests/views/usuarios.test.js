@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter } from 'vue-router';
+import ConfirmarSenhaModal from '../../components/ConfirmarSenhaModal.vue';
 import SenhaTemporariaModal from '../../components/SenhaTemporariaModal.vue';
 import UsuarioFormModal from '../../components/UsuarioFormModal.vue';
 import { api, ApiError } from '../../services/api';
@@ -244,6 +245,91 @@ describe('tela de usuários', () => {
         await flushPromises();
 
         expect(tela.text()).toContain('A senha vale até');
+    });
+
+    describe('2FA', () => {
+        const comDoisFatores = [
+            { ...usuarios[0], two_factor_ativo: true, two_factor_obrigatorio: true },
+            { ...usuarios[1], two_factor_ativo: true, two_factor_obrigatorio: false },
+            { id: 3, name: 'Carla Colega', email: 'carla@prefeitura.gov.br', role: 'administrador_prefeitura', role_label: 'Administrador da Prefeitura', active: true, must_change_password: false, two_factor_ativo: true, two_factor_obrigatorio: true, tenant: { razao_social: 'Prefeitura X' } },
+            { id: 4, name: 'Davi Fiscal', email: 'davi@prefeitura.gov.br', role: 'fiscal_controle_interno', role_label: 'Fiscal de Controle Interno', active: true, must_change_password: false, two_factor_ativo: false, two_factor_obrigatorio: false, tenant: { razao_social: 'Prefeitura X' } },
+            { id: 5, name: 'Eva Nova', email: 'eva@prefeitura.gov.br', role: 'administrador_prefeitura', role_label: 'Administrador da Prefeitura', active: true, must_change_password: false, two_factor_ativo: false, two_factor_obrigatorio: true, tenant: { razao_social: 'Prefeitura X' } },
+        ];
+
+        const linhaDe = (tela, nome) => tela.findAll('tbody tr').find((tr) => tr.text().includes(nome));
+        const botoes = (linha) => linha.findAll('button').map((b) => b.text());
+
+        beforeEach(() => {
+            api.get.mockImplementation(async (caminho) => (caminho === '/tenants'
+                ? { data: [{ id: 'a', razao_social: 'Prefeitura X', active: true }] }
+                : { data: comDoisFatores, meta: { current_page: 1, last_page: 1, total: 5 } }));
+        });
+
+        it('marca quem tem 2FA e quem ainda não ativou o obrigatório', async () => {
+            entrarComo('administrador_prefeitura', 1);
+            const tela = await abrirTela();
+
+            expect(linhaDe(tela, 'Bruno Gestor').text()).toContain('2FA');
+            expect(linhaDe(tela, 'Bruno Gestor').text()).not.toContain('2FA pendente');
+            expect(linhaDe(tela, 'Eva Nova').text()).toContain('2FA pendente');
+            // Fiscal sem 2FA não é obrigado: nada a marcar.
+            expect(linhaDe(tela, 'Davi Fiscal').text()).not.toContain('2FA');
+        });
+
+        it('administrador da prefeitura redefine o de gestor e fiscal, nunca o próprio nem o de outro administrador', async () => {
+            entrarComo('administrador_prefeitura', 1);
+            const tela = await abrirTela();
+
+            expect(botoes(linhaDe(tela, 'Bruno Gestor'))).toContain('Redefinir 2FA');
+            expect(botoes(linhaDe(tela, 'Ana Admin'))).not.toContain('Redefinir 2FA');
+            expect(botoes(linhaDe(tela, 'Carla Colega'))).not.toContain('Redefinir 2FA');
+            // Sem 2FA ativo não há o que redefinir.
+            expect(botoes(linhaDe(tela, 'Davi Fiscal'))).not.toContain('Redefinir 2FA');
+        });
+
+        it('super administrador também redefine o de administradores de prefeitura', async () => {
+            entrarComo('administrador_interno', 99);
+            const tela = await abrirTela();
+
+            expect(botoes(linhaDe(tela, 'Carla Colega'))).toContain('Redefinir 2FA');
+            expect(botoes(linhaDe(tela, 'Ana Admin'))).toContain('Redefinir 2FA');
+        });
+
+        it('pede a senha de quem redefine, redefine e avisa', async () => {
+            entrarComo('administrador_prefeitura', 1);
+            api.post.mockResolvedValue({ data: { ...comDoisFatores[1], two_factor_ativo: false } });
+            const tela = await abrirTela();
+
+            await linhaDe(tela, 'Bruno Gestor').findAll('button').find((b) => b.text() === 'Redefinir 2FA').trigger('click');
+            const modal = tela.findComponent(ConfirmarSenhaModal);
+            expect(modal.text()).toContain('Redefinir 2FA de Bruno Gestor');
+            expect(modal.find('#confirmar-codigo').exists()).toBe(false);
+
+            await modal.find('#confirmar-senha').setValue('MinhaSenha123');
+            await modal.find('form').trigger('submit');
+            await flushPromises();
+
+            expect(api.post).toHaveBeenCalledWith('/users/2/redefinir-2fa', { password: 'MinhaSenha123' });
+            expect(tela.findComponent(ConfirmarSenhaModal).exists()).toBe(false);
+            expect(tela.find('[role="status"]').text()).toContain('Bruno Gestor redefinida');
+            // A lista foi recarregada.
+            expect(api.get.mock.calls.filter(([caminho]) => caminho === '/users').length).toBeGreaterThan(1);
+        });
+
+        it('senha errada mantém a janela aberta com o erro', async () => {
+            entrarComo('administrador_prefeitura', 1);
+            api.post.mockRejectedValue(new ApiError(422, { message: 'x', errors: { password: ['A senha não confere.'] } }));
+            const tela = await abrirTela();
+
+            await linhaDe(tela, 'Bruno Gestor').findAll('button').find((b) => b.text() === 'Redefinir 2FA').trigger('click');
+            const modal = tela.findComponent(ConfirmarSenhaModal);
+            await modal.find('#confirmar-senha').setValue('errada');
+            await modal.find('form').trigger('submit');
+            await flushPromises();
+
+            expect(tela.findComponent(ConfirmarSenhaModal).text()).toContain('A senha não confere.');
+            expect(tela.find('[role="status"]').exists()).toBe(false);
+        });
     });
 
     it('redefinir pede confirmação e mostra a nova senha temporária uma vez', async () => {

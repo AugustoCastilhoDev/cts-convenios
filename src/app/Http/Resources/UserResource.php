@@ -27,6 +27,9 @@ class UserResource extends JsonResource
             'must_change_password' => $this->must_change_password,
             'senha_temporaria_expira_em' => $this->must_change_password ? $this->senha_temporaria_expira_em : null,
             'senha_temporaria_expirada' => $this->senhaTemporariaExpirada(),
+            // Só o indicador: o segredo e os códigos nunca saem do servidor depois da ativação.
+            'two_factor_ativo' => $this->doisFatoresAtivo(),
+            'two_factor_obrigatorio' => $this->exigeDoisFatores(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

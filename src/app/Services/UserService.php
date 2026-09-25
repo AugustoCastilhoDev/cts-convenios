@@ -92,6 +92,12 @@ class UserService
         // A pessoa acabou de escolher a própria senha: a exigência de troca (se havia) termina aqui.
         $usuario->forceFill(['password' => $novaSenha, 'must_change_password' => false, 'senha_temporaria_expira_em' => null])->save();
 
+        $this->revogarOutrosTokens($usuario);
+    }
+
+    /** Derruba as outras sessões da pessoa (outros dispositivos); só o token desta requisição continua. */
+    public function revogarOutrosTokens(User $usuario): void
+    {
         // Fora de uma requisição por token (ex.: testes com actingAs) não há token "atual" a preservar.
         $atual = $usuario->currentAccessToken();
         $usuario->tokens()

@@ -45,6 +45,18 @@ class UserPolicy
         return $this->gerenciaConta($user, $alvo) && ! $alvo->is($user);
     }
 
+    /**
+     * Botão "Redefinir 2FA": o super administrador redefine o de qualquer conta (o dele mesmo, só pelo servidor);
+     * o administrador da prefeitura, o de gestores e fiscais da prefeitura dele. O de outro administrador de
+     * prefeitura fica só com o super administrador: um administrador comprometido não derruba a proteção do colega.
+     */
+    public function redefinirDoisFatores(User $user, User $alvo): bool
+    {
+        return $this->gerenciaConta($user, $alvo)
+            && ! $alvo->is($user)
+            && ! $alvo->role->administraPrefeitura();
+    }
+
     private function gerenciaConta(User $user, User $alvo): bool
     {
         return $user->role->administraPrefeitura()
