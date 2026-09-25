@@ -132,7 +132,14 @@ case "$COMANDO" in
 
     limpar)
         echo "Apagando da nuvem backups com mais de ${RETENCAO_DIAS} dias..."
-        rclone delete "$DESTINO/" --min-age "${RETENCAO_DIAS}d" --include "banco-*.enc" --include "documentos-*.enc" -v 2>&1 | grep -E "Deleted|ERROR" || echo "Nada a apagar."
+        # Só o padrão dos nossos arquivos. O nível INFO mostra o que foi apagado (por flag: o -v conflita com o RCLONE_LOG_LEVEL).
+        # Uma falha NÃO pode ser escondida: sem isto a retenção pararia de funcionar em silêncio.
+        if ! SAIDA="$(rclone delete "$DESTINO/" --min-age "${RETENCAO_DIAS}d" --include "banco-*.enc" --include "documentos-*.enc" --log-level INFO 2>&1)"; then
+            echo "$SAIDA" >&2
+            echo "ERRO: a limpeza da nuvem falhou." >&2
+            exit 1
+        fi
+        echo "$(printf '%s\n' "$SAIDA" | grep -c ': Deleted' || true) arquivo(s) antigo(s) apagado(s) da nuvem."
         ;;
 
     *)
