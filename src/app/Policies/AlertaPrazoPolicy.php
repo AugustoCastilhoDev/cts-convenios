@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\AlertaPrazo;
 use App\Models\User;
 use App\Policies\Concerns\ChecksTenantOwnership;
@@ -18,7 +17,7 @@ class AlertaPrazoPolicy
 
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [UserRole::GestorConvenios, UserRole::FiscalControleInterno], true);
+        return $user->role->consultaConvenios();
     }
 
     public function view(User $user, AlertaPrazo $alerta): bool

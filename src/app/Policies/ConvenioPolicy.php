@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Convenio;
 use App\Models\User;
 use App\Policies\Concerns\ChecksTenantOwnership;
@@ -22,7 +21,7 @@ class ConvenioPolicy
 
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [UserRole::GestorConvenios, UserRole::FiscalControleInterno], true);
+        return $user->role->consultaConvenios();
     }
 
     public function view(User $user, Convenio $convenio): bool
@@ -32,7 +31,7 @@ class ConvenioPolicy
 
     public function create(User $user): bool
     {
-        return $user->role === UserRole::GestorConvenios;
+        return $user->role->editaConvenios();
     }
 
     public function update(User $user, Convenio $convenio): bool

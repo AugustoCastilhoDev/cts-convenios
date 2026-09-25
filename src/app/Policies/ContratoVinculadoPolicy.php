@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\ContratoVinculado;
 use App\Models\Convenio;
 use App\Models\User;
@@ -19,7 +18,7 @@ class ContratoVinculadoPolicy
 
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [UserRole::GestorConvenios, UserRole::FiscalControleInterno], true);
+        return $user->role->consultaConvenios();
     }
 
     public function view(User $user, ContratoVinculado $contrato): bool
@@ -34,13 +33,13 @@ class ContratoVinculadoPolicy
      */
     public function create(User $user, Convenio $convenio): bool
     {
-        return $user->role === UserRole::GestorConvenios
+        return $user->role->editaConvenios()
             && $this->pertenceAoMesmoTenant($user, $convenio->tenant_id);
     }
 
     public function update(User $user, ContratoVinculado $contrato): bool
     {
-        return $user->role === UserRole::GestorConvenios
+        return $user->role->editaConvenios()
             && $this->pertenceAoMesmoTenant($user, $contrato->tenant_id);
     }
 

@@ -12,12 +12,16 @@ export const useAuthStore = defineStore('auth', {
         // Entrou com a senha que um administrador definiu: precisa criar a própria antes de usar o sistema.
         precisaTrocarSenha: (state) => state.user?.must_change_password === true,
         // O sino de alertas é de quem trabalha os prazos de uma prefeitura (espelha AlertaPrazoPolicy).
-        temSino: (state) => ['gestor_convenios', 'fiscal_controle_interno'].includes(state.user?.role),
+        temSino: (state) => ['administrador_prefeitura', 'gestor_convenios', 'fiscal_controle_interno'].includes(state.user?.role),
+        // Super administrador (equipe da plataforma) e administrador da prefeitura (a pessoa de confiança do município).
         isAdmin: (state) => state.user?.role === 'administrador_interno',
+        isAdminPrefeitura: (state) => state.user?.role === 'administrador_prefeitura',
+        // Cria/desativa usuários e consulta a auditoria: o super administrador em todas as prefeituras, o da prefeitura só na dele.
+        podeGerenciarUsuarios: (state) => ['administrador_interno', 'administrador_prefeitura'].includes(state.user?.role),
         // Só o Administrador Interno apaga registros (ArquivoConvenioPolicy::delete e ConvenioPolicy::delete).
         podeExcluir: (state) => state.user?.role === 'administrador_interno',
         // Quem pode alterar convênios (espelha ConvenioPolicy::create/update).
-        podeEditar: (state) => ['gestor_convenios', 'administrador_interno'].includes(state.user?.role),
+        podeEditar: (state) => ['gestor_convenios', 'administrador_prefeitura', 'administrador_interno'].includes(state.user?.role),
     },
 
     actions: {

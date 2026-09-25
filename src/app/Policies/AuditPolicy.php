@@ -5,9 +5,10 @@ namespace App\Policies;
 use App\Models\User;
 
 /**
- * A trilha de auditoria (quem mudou o quê, de onde) cruza todas as
- * prefeituras e traz IP e navegador de quem agiu: só o Administrador
- * Interno consulta. O Fiscal vê o histórico de um convênio na ficha em PDF.
+ * A trilha de auditoria (quem mudou o quê, de onde) traz IP e navegador de quem agiu. O super
+ * administrador consulta tudo; o administrador da prefeitura consulta e exporta só a da própria
+ * prefeitura (o filtro está no AuditoriaService). Gestor e Fiscal não: o Fiscal vê o histórico de um
+ * convênio na ficha em PDF.
  */
 class AuditPolicy
 {
@@ -18,6 +19,6 @@ class AuditPolicy
 
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->role->administraPrefeitura();
     }
 }

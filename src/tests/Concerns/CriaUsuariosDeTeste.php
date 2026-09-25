@@ -46,6 +46,19 @@ trait CriaUsuariosDeTeste
         ]);
     }
 
+    protected function criarAdminDaPrefeitura(?Tenant $tenant = null): User
+    {
+        $tenant ??= $this->criarTenant();
+
+        return User::forceCreate([
+            'tenant_id' => $tenant->id,
+            'role' => UserRole::AdministradorPrefeitura,
+            'name' => 'Admin da Prefeitura Teste',
+            'email' => fake()->unique()->safeEmail(),
+            'password' => Hash::make('password'),
+        ]);
+    }
+
     protected function criarFiscal(?Tenant $tenant = null): User
     {
         $tenant ??= $this->criarTenant();

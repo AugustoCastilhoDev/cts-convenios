@@ -47,12 +47,15 @@ const principal = [
     { rota: 'kanban', rotulo: 'Convênios', icone: 'convenios', prefixo: '/convenios' },
 ];
 
-const administracao = [
-    { rota: 'admin-prefeituras', rotulo: 'Prefeituras', icone: 'prefeituras', prefixo: '/admin/prefeituras' },
+// soSuper: só o super administrador (plataforma). O administrador da prefeitura vê Usuários e Auditoria da própria prefeitura.
+const todaAdministracao = [
+    { rota: 'admin-prefeituras', rotulo: 'Prefeituras', icone: 'prefeituras', prefixo: '/admin/prefeituras', soSuper: true },
     { rota: 'admin-usuarios', rotulo: 'Usuários', icone: 'usuarios', prefixo: '/admin/usuarios' },
-    { rota: 'admin-contatos', rotulo: 'Pedidos de contato', icone: 'envelope', prefixo: '/admin/contatos' },
+    { rota: 'admin-contatos', rotulo: 'Pedidos de contato', icone: 'envelope', prefixo: '/admin/contatos', soSuper: true },
     { rota: 'admin-auditoria', rotulo: 'Auditoria', icone: 'auditoria', prefixo: '/admin/auditoria' },
 ];
+
+const administracao = computed(() => todaAdministracao.filter((item) => auth.isAdmin || !item.soSuper));
 
 function ativo(item) {
     return item.exato ? route.path === item.prefixo : route.path.startsWith(item.prefixo);
@@ -130,7 +133,7 @@ const itemInativo = 'text-slate-300 hover:bg-white/5 hover:text-white';
                     </li>
                 </ul>
 
-                <div v-if="auth.isAdmin">
+                <div v-if="auth.podeGerenciarUsuarios">
                     <p class="mb-2 px-3 text-xs font-medium text-slate-400" :class="{ 'lg:hidden': recolhido }">Administração</p>
                     <hr v-if="recolhido" class="mb-2 hidden border-white/10 lg:block">
                     <ul class="space-y-1">

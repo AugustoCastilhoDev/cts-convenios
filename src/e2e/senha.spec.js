@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { CONTA_TROCA, prepararContaComSenhaTemporaria } from './suporte.js';
 
+let temporaria = '';
+
 test.describe('esqueci minha senha', () => {
     test('o login leva ao pedido e a resposta não revela se o e-mail existe', async ({ page }) => {
         await page.goto('/app/login');
@@ -39,13 +41,14 @@ test.describe('esqueci minha senha', () => {
 
 test.describe('senha temporária', () => {
     test.beforeEach(async () => {
-        await prepararContaComSenhaTemporaria();
+        // A senha temporária é gerada pelo sistema e devolvida uma vez, como o administrador a vê na tela.
+        temporaria = await prepararContaComSenhaTemporaria();
     });
 
     test('quem entra com a senha do administrador só chega ao sistema depois de criar a própria', async ({ page }) => {
         await page.goto('/app/login');
         await page.getByLabel('E-mail').fill(CONTA_TROCA.email);
-        await page.getByLabel('Senha').fill(CONTA_TROCA.temporaria);
+        await page.getByLabel('Senha').fill(temporaria);
         await page.getByRole('button', { name: 'Entrar' }).click();
 
         // Levado direto à troca, sem ver o painel.
@@ -64,7 +67,7 @@ test.describe('senha temporária', () => {
         await expect(page.getByText('A senha atual não confere.')).toBeVisible();
 
         // Senha nova fraca: o servidor explica o motivo.
-        await page.getByLabel(/Senha temporária/).fill(CONTA_TROCA.temporaria);
+        await page.getByLabel(/Senha temporária/).fill(temporaria);
         await page.getByLabel('Nova senha', { exact: true }).fill('curta1');
         await page.getByLabel('Repita a nova senha').fill('curta1');
         await page.getByRole('button', { name: 'Salvar e continuar' }).click();

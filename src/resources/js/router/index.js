@@ -51,7 +51,7 @@ const routes = [
                 path: 'admin/usuarios',
                 name: 'admin-usuarios',
                 component: () => import('../views/admin/UsuariosView.vue'),
-                meta: { requiresAdmin: true },
+                meta: { requiresGestaoUsuarios: true },
             },
             {
                 path: 'admin/contatos',
@@ -63,7 +63,7 @@ const routes = [
                 path: 'admin/auditoria',
                 name: 'admin-auditoria',
                 component: () => import('../views/admin/AuditoriaView.vue'),
-                meta: { requiresAdmin: true },
+                meta: { requiresGestaoUsuarios: true },
             },
             {
                 path: 'convenios/:id',
@@ -114,7 +114,12 @@ router.beforeEach(async (to) => {
     }
 
     // Telas de administração: o servidor também barra (403), isto só evita mostrar uma tela vazia.
+    // requiresAdmin = só o super administrador; requiresGestaoUsuarios = ele e o administrador da prefeitura.
     if (to.meta.requiresAdmin && !auth.isAdmin) {
+        return { name: 'dashboard' };
+    }
+
+    if (to.meta.requiresGestaoUsuarios && !auth.podeGerenciarUsuarios) {
         return { name: 'dashboard' };
     }
 });

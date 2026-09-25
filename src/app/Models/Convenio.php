@@ -124,4 +124,18 @@ class Convenio extends Model implements AuditableContract
                 : null,
         );
     }
+
+    /**
+     * Grava de qual prefeitura é a alteração: o administrador da prefeitura consulta e exporta só a
+     * auditoria dela, e o filtro precisa ser por uma coluna, não por adivinhação a partir do tipo.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function transformAudit(array $data): array
+    {
+        $data['tenant_id'] = $this->tenant_id;
+
+        return $data;
+    }
 }

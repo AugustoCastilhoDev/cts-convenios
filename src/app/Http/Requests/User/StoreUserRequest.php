@@ -6,12 +6,12 @@ use App\Enums\UserRole;
 use Illuminate\Foundation\Http\Attributes\StopOnFirstFailure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 /**
- * Só Gestor de Convênios e Fiscal de Controle Interno são criados por aqui.
- * Administrador Interno (cross-tenant) nunca nasce de payload de API: só
- * pelo comando `php artisan admin:criar`.
+ * Cria Gestor, Fiscal ou Administrador da Prefeitura. Super administrador (cross-tenant) nunca nasce
+ * de payload de API: só pelo comando `php artisan admin:criar`. Não há campo de senha: o sistema gera
+ * uma temporária. Quem é administrador da prefeitura só cria na própria prefeitura, mesmo que envie
+ * outro tenant_id.
  */
 #[StopOnFirstFailure]
 class StoreUserRequest extends FormRequest
@@ -19,6 +19,15 @@ class StoreUserRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $autor = $this->user();
+
+        if ($autor && ! $autor->isAdministradorInterno()) {
+            $this->merge(['tenant_id' => $autor->tenant_id]);
+        }
     }
 
     /**
@@ -29,7 +38,6 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', Password::defaults()],
             'role' => ['required', Rule::in(self::papeisPermitidos())],
             'tenant_id' => ['required', 'uuid', Rule::exists('tenants', 'id')],
         ];
@@ -40,6 +48,10 @@ class StoreUserRequest extends FormRequest
      */
     public static function papeisPermitidos(): array
     {
-        return [UserRole::GestorConvenios->value, UserRole::FiscalControleInterno->value];
+        return [
+            UserRole::GestorConvenios->value,
+            UserRole::FiscalControleInterno->value,
+            UserRole::AdministradorPrefeitura->value,
+        ];
     }
 }

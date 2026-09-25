@@ -155,7 +155,7 @@ class AlertaPrazoService
         return User::query()
             ->where('tenant_id', $convenio->tenant_id)
             ->where('active', true)
-            ->whereIn('role', [UserRole::GestorConvenios->value, UserRole::FiscalControleInterno->value])
+            ->whereIn('role', UserRole::valoresQueConsultamConvenios())
             ->pluck('email')
             ->all();
     }

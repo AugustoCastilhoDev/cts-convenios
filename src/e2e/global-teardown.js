@@ -1,6 +1,6 @@
-import { desativarContaDeTroca, limparDadosDeTeste } from './suporte.js';
+import { desativarContasDeTeste, limparDadosDeTeste } from './suporte.js';
 
 export default async function globalTeardown() {
     await limparDadosDeTeste();
-    await desativarContaDeTroca();
+    await desativarContasDeTeste();
 }

@@ -5,11 +5,18 @@ namespace App\Enums;
 enum UserRole: string
 {
     /**
-     * Equipe da Castilho Soluções Digitais: gerencia servidores, usuários e
-     * auditoria de todas as prefeituras. Não pertence a um tenant específico
+     * Super administrador: a equipe da Castilho Soluções Digitais. Gerencia prefeituras, usuários e
+     * auditoria de todas as prefeituras e é o único que exclui registros. Não pertence a um tenant
      * (tenant_id nulo) — enxerga todos os municípios.
      */
     case AdministradorInterno = 'administrador_interno';
+
+    /**
+     * Administrador da prefeitura: a pessoa de confiança do município. Trabalha nos convênios como um
+     * gestor e, além disso, cria/desativa os usuários da própria prefeitura, redefine senhas e
+     * consulta/exporta a auditoria dela. Nunca enxerga outra prefeitura nem exclui registros.
+     */
+    case AdministradorPrefeitura = 'administrador_prefeitura';
 
     /**
      * Servidor da prefeitura: lança convênios, modifica marcos temporais e
@@ -26,7 +33,8 @@ enum UserRole: string
     public function label(): string
     {
         return match ($this) {
-            self::AdministradorInterno => 'Administrador Interno',
+            self::AdministradorInterno => 'Super Administrador',
+            self::AdministradorPrefeitura => 'Administrador da Prefeitura',
             self::GestorConvenios => 'Gestor de Convênios',
             self::FiscalControleInterno => 'Fiscal de Controle Interno',
         };
@@ -39,5 +47,35 @@ enum UserRole: string
     public function exigeTenant(): bool
     {
         return $this !== self::AdministradorInterno;
+    }
+
+    /** Papéis que enxergam os convênios da própria prefeitura (e recebem os alertas de prazo). */
+    public function consultaConvenios(): bool
+    {
+        return in_array($this, [self::AdministradorPrefeitura, self::GestorConvenios, self::FiscalControleInterno], true);
+    }
+
+    /** Papéis que lançam e alteram convênios, contratos e documentos. */
+    public function editaConvenios(): bool
+    {
+        return in_array($this, [self::AdministradorPrefeitura, self::GestorConvenios], true);
+    }
+
+    public function administraPrefeitura(): bool
+    {
+        return $this === self::AdministradorPrefeitura;
+    }
+
+    /**
+     * Valores dos papéis que trabalham com os convênios de uma prefeitura (para consultas ao banco).
+     *
+     * @return array<int, string>
+     */
+    public static function valoresQueConsultamConvenios(): array
+    {
+        return array_map(
+            fn (self $papel) => $papel->value,
+            array_values(array_filter(self::cases(), fn (self $papel) => $papel->consultaConvenios())),
+        );
     }
 }

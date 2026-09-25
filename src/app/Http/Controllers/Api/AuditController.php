@@ -10,15 +10,17 @@ use App\Models\ContratoVinculado;
 use App\Models\Convenio;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\AuditoriaService;
 use App\Support\Paginacao;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
 use Illuminate\Routing\Attributes\Controllers\Middleware;
 use OwenIt\Auditing\Models\Audit;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Consulta da trilha de auditoria (somente leitura, só Administrador
- * Interno — AuditPolicy).
+ * Consulta e exportação da trilha de auditoria (somente leitura — AuditPolicy): o super administrador
+ * vê tudo; o administrador da prefeitura, só a própria prefeitura (AuditoriaService).
  */
 #[Middleware('auth:sanctum')]
 class AuditController extends Controller
@@ -36,23 +38,21 @@ class AuditController extends Controller
         'usuario' => User::class,
     ];
 
+    public function __construct(private readonly AuditoriaService $auditoria) {}
+
     #[Authorize('viewAny', Audit::class)]
     public function index(ConsultarAuditoriaRequest $request): AnonymousResourceCollection
     {
-        $filtros = $request->validated();
-
-        $auditorias = Audit::query()
-            ->with('user')
-            ->when($filtros['tipo'] ?? null, fn ($query, $tipo) => $query->where('auditable_type', self::TIPOS[$tipo]))
-            ->when($filtros['registro_id'] ?? null, fn ($query, $id) => $query->where('auditable_id', $id))
-            ->when($filtros['user_id'] ?? null, fn ($query, $id) => $query->where('user_id', $id))
-            ->when($filtros['evento'] ?? null, fn ($query, $evento) => $query->where('event', $evento))
-            ->when($filtros['de'] ?? null, fn ($query, $data) => $query->where('created_at', '>=', $data.' 00:00:00'))
-            ->when($filtros['ate'] ?? null, fn ($query, $data) => $query->where('created_at', '<=', $data.' 23:59:59'))
-            ->latest('created_at')
-            ->latest('id')
+        $auditorias = $this->auditoria
+            ->consultar($request->validated(), $request->user())
             ->paginate(Paginacao::porPagina($request, 25));
 
         return AuditResource::collection($auditorias);
+    }
+
+    #[Authorize('viewAny', Audit::class)]
+    public function exportar(ConsultarAuditoriaRequest $request): StreamedResponse
+    {
+        return $this->auditoria->exportarCsv($request->validated(), $request->user());
     }
 }

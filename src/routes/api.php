@@ -37,6 +37,7 @@ Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
 Route::middleware(['auth:sanctum', 'conta.ativa', 'senha.definitiva'])->group(function () {
 
     Route::get('/audits', [AuditController::class, 'index']);
+    Route::get('/audits/exportar', [AuditController::class, 'exportar']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
@@ -60,6 +61,7 @@ Route::middleware(['auth:sanctum', 'conta.ativa', 'senha.definitiva'])->group(fu
         Route::post('/', [UserController::class, 'store']);
         Route::get('/{user}', [UserController::class, 'show']);
         Route::put('/{user}', [UserController::class, 'update']);
+        Route::post('/{user}/redefinir-senha', [UserController::class, 'redefinirSenha']);
     });
 
     Route::prefix('convenios')->group(function () {

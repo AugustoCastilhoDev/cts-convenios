@@ -69,42 +69,80 @@ export async function limparDadosDeTeste() {
     await api.dispose();
 }
 
-export const CONTA_TROCA = { email: 'e2e.troca@exemplo.gov.br', temporaria: 'TemporariaE2E-2026' };
+export const CONTA_TROCA = { email: 'e2e.troca@exemplo.gov.br' };
+export const CONTA_ADMIN_PREFEITURA = { email: 'e2e.adminpref@exemplo.gov.br', senhaPropria: 'SenhaDoAdminE2E-2026' };
+export const PREFIXO_EMAIL_E2E = 'e2e.';
 
 /**
- * Deixa a conta de teste da "senha temporária" pronta: cria (ou reativa) e define a senha temporária,
- * o que também liga a marca de troca obrigatória. Idempotente: pode rodar toda vez.
+ * Deixa uma conta de teste pronta com uma senha temporária NOVA: cria a conta (ou reativa e redefine) e
+ * devolve a senha que o sistema gerou, exatamente como o administrador a vê na tela. Idempotente.
  */
-export async function prepararContaComSenhaTemporaria() {
+async function prepararConta(email, role, nome) {
     const api = await apiAdmin();
 
     const prefeituras = await (await api.get('/api/tenants')).json();
     const tenantId = prefeituras.data[0].id;
 
-    const existentes = await (await api.get(`/api/users?busca=${encodeURIComponent(CONTA_TROCA.email)}`)).json();
-    const conta = existentes.data.find((u) => u.email === CONTA_TROCA.email);
+    const existentes = await (await api.get(`/api/users?busca=${encodeURIComponent(email)}`)).json();
+    const conta = existentes.data.find((u) => u.email === email);
 
-    const resposta = conta
-        ? await api.put(`/api/users/${conta.id}`, { data: { password: CONTA_TROCA.temporaria, active: true } })
-        : await api.post('/api/users', {
-            data: { name: 'E2E Troca de Senha', email: CONTA_TROCA.email, password: CONTA_TROCA.temporaria, role: 'gestor_convenios', tenant_id: tenantId },
-        });
+    let resposta;
+    if (conta) {
+        await api.put(`/api/users/${conta.id}`, { data: { active: true, role } });
+        resposta = await api.post(`/api/users/${conta.id}/redefinir-senha`);
+    } else {
+        resposta = await api.post('/api/users', { data: { name: nome, email, role, tenant_id: tenantId } });
+    }
 
     if (!resposta.ok()) {
-        throw new Error(`Não foi possível preparar a conta de teste (${resposta.status()}): ${await resposta.text()}`);
+        throw new Error(`Não foi possível preparar a conta ${email} (${resposta.status()}): ${await resposta.text()}`);
+    }
+
+    const { senha_temporaria: senha } = await resposta.json();
+    await api.dispose();
+
+    return senha;
+}
+
+export const prepararContaComSenhaTemporaria = () => prepararConta(CONTA_TROCA.email, 'gestor_convenios', 'E2E Troca de Senha');
+
+/**
+ * Administrador da prefeitura de teste, já com a senha própria definida (a temporária foi trocada por API),
+ * e o token dele para abrir o sistema sem passar pela tela de login (que tem limite de tentativas).
+ */
+export async function prepararAdministradorDaPrefeitura() {
+    const temporaria = await prepararConta(CONTA_ADMIN_PREFEITURA.email, 'administrador_prefeitura', 'E2E Administrador da Prefeitura');
+    const api = await request.newContext({ baseURL: baseURL(), extraHTTPHeaders: { Accept: 'application/json' } });
+
+    const login = await api.post('/api/login', { data: { email: CONTA_ADMIN_PREFEITURA.email, password: temporaria, device_name: 'e2e' } });
+    const { token } = await login.json();
+
+    const troca = await request.newContext({ baseURL: baseURL(), extraHTTPHeaders: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
+    const resposta = await troca.put('/api/me/password', { data: { current_password: temporaria, password: CONTA_ADMIN_PREFEITURA.senhaPropria } });
+    if (!resposta.ok()) {
+        throw new Error(`Não foi possível definir a senha do administrador de teste (${resposta.status()}).`);
     }
 
     await api.dispose();
+    await troca.dispose();
+
+    return token;
 }
 
-/** Desativa a conta de teste da senha temporária (usuários não são apagados; a conta fica fora de uso). */
-export async function desativarContaDeTroca() {
-    const api = await apiAdmin();
-    const existentes = await (await api.get(`/api/users?busca=${encodeURIComponent(CONTA_TROCA.email)}`)).json();
-    const conta = (existentes.data ?? []).find((u) => u.email === CONTA_TROCA.email);
+/** Abre o sistema com um token qualquer (sem passar pela tela de login). */
+export async function entrarComToken(page, token) {
+    await page.addInitScript((t) => localStorage.setItem('cts_token', t), token);
+}
 
-    if (conta) {
-        await api.put(`/api/users/${conta.id}`, { data: { active: false } });
+/** Desativa todas as contas criadas pelos testes (e-mail começando por "e2e."): usuários não são apagados. */
+export async function desativarContasDeTeste() {
+    const api = await apiAdmin();
+    const contas = await (await api.get(`/api/users?busca=${encodeURIComponent(PREFIXO_EMAIL_E2E)}&por_pagina=200`)).json();
+
+    for (const conta of contas.data ?? []) {
+        if (conta.email.startsWith(PREFIXO_EMAIL_E2E) && conta.active) {
+            await api.put(`/api/users/${conta.id}`, { data: { active: false } });
+        }
     }
 
     await api.dispose();

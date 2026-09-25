@@ -23,6 +23,8 @@ class UserResource extends JsonResource
                 'razao_social' => $this->tenant->razao_social,
             ]),
             'active' => $this->active,
+            // Ainda usa a senha temporária: a lista de usuários mostra quem não criou a própria senha.
+            'must_change_password' => $this->must_change_password,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

@@ -3,45 +3,52 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\SenhaTemporaria;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class UserService
 {
     /**
-     * tenant_id e role fora do #[Fillable] do User: são atribuídos aqui,
-     * depois de validados pelo Form Request.
+     * A senha inicial é gerada aqui (aleatória) e devolvida UMA vez, para quem criou a conta repassar
+     * por um canal seguro. Ela não é guardada em lugar nenhum além do hash e o usuário é obrigado a
+     * trocá-la no primeiro acesso. tenant_id e role ficam fora do #[Fillable] do User: são atribuídos
+     * aqui, depois de validados pelo Form Request.
+     *
+     * @return array{0: User, 1: string} O usuário e a senha temporária em texto.
      */
-    public function criar(array $dados): User
+    public function criar(array $dados): array
     {
-        $usuario = new User(Arr::only($dados, ['name', 'email', 'password']));
+        $senha = SenhaTemporaria::gerar();
+
+        $usuario = new User(['name' => $dados['name'], 'email' => $dados['email'], 'password' => $senha]);
         $usuario->forceFill([
             'tenant_id' => $dados['tenant_id'],
             'role' => $dados['role'],
             'active' => true,
-            // A senha inicial foi escolhida por outra pessoa (o administrador): a troca é obrigatória.
             'must_change_password' => true,
         ])->save();
 
-        return $usuario;
+        return [$usuario, $senha];
     }
 
     /**
-     * Desativar a conta ou trocar a senha revoga todos os tokens emitidos:
-     * o efeito é imediato, sem esperar o token expirar.
+     * Desativar a conta revoga todos os tokens emitidos: o efeito é imediato, sem esperar o token expirar.
+     * Quem não é o super administrador (o administrador da prefeitura) não pode se desativar nem mudar o
+     * próprio papel.
      */
-    public function atualizar(User $usuario, array $dados): User
+    public function atualizar(User $usuario, array $dados, ?User $autor = null): User
     {
-        $usuario->fill(Arr::only($dados, ['name', 'email', 'password']));
+        $usuario->fill(Arr::only($dados, ['name', 'email']));
         $usuario->forceFill(Arr::only($dados, ['role', 'active']));
 
-        // Senha redefinida por um administrador é temporária: quem a recebe troca no próximo acesso.
-        if ($usuario->isDirty('password')) {
-            $usuario->forceFill(['must_change_password' => true]);
+        if ($autor && ! $autor->isAdministradorInterno()) {
+            $this->impedirAutoPrejuizo($usuario, $autor);
         }
 
-        $revogarTokens = $usuario->isDirty('password')
-            || ($usuario->isDirty('active') && ! $usuario->active);
+        $revogarTokens = $usuario->isDirty('active') && ! $usuario->active;
 
         $usuario->save();
 
@@ -50,6 +57,24 @@ class UserService
         }
 
         return $usuario;
+    }
+
+    /**
+     * Botão "Redefinir senha": nova senha temporária aleatória (mostrada uma vez), troca obrigatória
+     * no próximo acesso e todas as sessões da pessoa caem na hora.
+     *
+     * @return string A senha temporária em texto.
+     */
+    public function redefinirParaTemporaria(User $usuario, User $autor): string
+    {
+        $senha = SenhaTemporaria::gerar();
+
+        $usuario->forceFill(['password' => $senha, 'must_change_password' => true])->save();
+        $usuario->tokens()->delete();
+
+        Log::info('Senha redefinida para temporária por um administrador', ['user_id' => $usuario->id, 'por' => $autor->id]);
+
+        return $senha;
     }
 
     /**
@@ -76,5 +101,21 @@ class UserService
     {
         $usuario->forceFill(['password' => $novaSenha, 'must_change_password' => false])->save();
         $usuario->tokens()->delete();
+    }
+
+    /**
+     * O administrador da prefeitura não pode se desativar nem mudar o próprio papel. Só quem é administrador
+     * ativo mexe em contas, e ninguém mexe na própria: assim a prefeitura sempre mantém pelo menos um
+     * administrador ativo (o super administrador é quem resolve o caso extremo).
+     */
+    private function impedirAutoPrejuizo(User $alvo, User $autor): void
+    {
+        $desativando = $alvo->isDirty('active') && ! $alvo->active;
+
+        if ($alvo->is($autor) && ($desativando || $alvo->isDirty('role'))) {
+            throw ValidationException::withMessages([
+                'active' => 'Você não pode desativar a própria conta nem mudar o próprio papel. Peça a outro administrador.',
+            ]);
+        }
     }
 }

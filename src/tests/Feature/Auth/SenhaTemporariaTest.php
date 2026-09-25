@@ -13,8 +13,6 @@ class SenhaTemporariaTest extends TestCase
     use CriaUsuariosDeTeste;
     use RefreshDatabase;
 
-    private const TEMPORARIA = 'TemporariaDoAdmin1';
-
     private function token(string $email, string $senha): string
     {
         // Depois de um actingAs o guard padrão é "sanctum" e o login usa o "web"; depois do login o usuário
@@ -31,23 +29,26 @@ class SenhaTemporariaTest extends TestCase
         return $token;
     }
 
+    /** Senha temporária mostrada ao administrador na criação (guardada pelo teste, como ele repassaria). */
+    private string $temporaria = '';
+
     /** Cria um usuário pela API, como o administrador faz na tela. */
     private function criarPelaApi(string $papel = 'gestor_convenios'): User
     {
         $tenant = $this->criarTenant();
         Sanctum::actingAs($this->criarAdmin());
 
-        $id = $this->postJson('/api/users', [
+        $resposta = $this->postJson('/api/users', [
             'name' => 'Pessoa Nova',
             'email' => 'nova@exemplo.gov.br',
-            'password' => self::TEMPORARIA,
             'role' => $papel,
             'tenant_id' => $tenant->id,
-        ])->assertCreated()->json('data.id');
+        ])->assertCreated();
 
+        $this->temporaria = $resposta->json('senha_temporaria');
         $this->app['auth']->forgetGuards();
 
-        return User::findOrFail($id);
+        return User::findOrFail($resposta->json('data.id'));
     }
 
     public function test_conta_criada_pelo_admin_nasce_com_senha_temporaria(): void
@@ -60,7 +61,7 @@ class SenhaTemporariaTest extends TestCase
     public function test_com_senha_temporaria_so_passa_o_perfil_e_a_troca_de_senha(): void
     {
         $usuario = $this->criarPelaApi();
-        $token = $this->token($usuario->email, self::TEMPORARIA);
+        $token = $this->token($usuario->email, $this->temporaria);
 
         // Bloqueado: qualquer tela de trabalho responde 403 com o código que o sistema entende.
         foreach (['/api/convenios', '/api/dashboard', '/api/notificacoes'] as $rota) {
@@ -75,7 +76,7 @@ class SenhaTemporariaTest extends TestCase
             ->assertJsonPath('must_change_password', true);
 
         $this->withToken($token)->putJson('/api/me/password', [
-            'current_password' => self::TEMPORARIA,
+            'current_password' => $this->temporaria,
             'password' => 'MinhaSenhaPropria99',
         ])->assertOk();
 
@@ -87,12 +88,12 @@ class SenhaTemporariaTest extends TestCase
     public function test_a_troca_exige_a_senha_temporaria_e_uma_senha_diferente(): void
     {
         $usuario = $this->criarPelaApi();
-        $token = $this->token($usuario->email, self::TEMPORARIA);
+        $token = $this->token($usuario->email, $this->temporaria);
 
         $this->withToken($token)->putJson('/api/me/password', ['current_password' => 'errada-mesmo', 'password' => 'MinhaSenhaPropria99'])
             ->assertUnprocessable()->assertJsonValidationErrors('current_password');
 
-        $this->withToken($token)->putJson('/api/me/password', ['current_password' => self::TEMPORARIA, 'password' => self::TEMPORARIA])
+        $this->withToken($token)->putJson('/api/me/password', ['current_password' => $this->temporaria, 'password' => $this->temporaria])
             ->assertUnprocessable()->assertJsonValidationErrors('password');
 
         $this->assertTrue($usuario->fresh()->must_change_password);
@@ -101,7 +102,7 @@ class SenhaTemporariaTest extends TestCase
     public function test_sair_continua_funcionando_com_senha_temporaria(): void
     {
         $usuario = $this->criarPelaApi();
-        $token = $this->token($usuario->email, self::TEMPORARIA);
+        $token = $this->token($usuario->email, $this->temporaria);
 
         $this->withToken($token)->postJson('/api/logout')->assertOk();
     }
@@ -112,7 +113,7 @@ class SenhaTemporariaTest extends TestCase
         $this->assertFalse($gestor->must_change_password);
 
         Sanctum::actingAs($this->criarAdmin());
-        $this->putJson("/api/users/{$gestor->id}", ['password' => 'RedefinidaPeloAdmin7'])->assertOk();
+        $this->postJson("/api/users/{$gestor->id}/redefinir-senha")->assertOk();
 
         $this->assertTrue($gestor->fresh()->must_change_password);
     }

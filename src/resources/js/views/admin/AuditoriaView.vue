@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { api } from '../../services/api';
+import BotaoExportar from '../../components/BotaoExportar.vue';
 import Paginacao from '../../components/Paginacao.vue';
 import { eventos, rotuloDoCampo, tiposRegistro, tituloDoEvento, tituloDoTipo, valorLegivel } from '../../utils/auditoria';
 
@@ -65,6 +66,12 @@ function formatarDataHora(iso) {
     return new Date(iso).toLocaleString('pt-BR');
 }
 
+const opcoesExportar = computed(() => [{
+    rotulo: 'Planilha (CSV)',
+    path: '/audits/exportar',
+    params: { ...filtros, registro_id: filtros.registro_id.trim() },
+}]);
+
 onMounted(carregar);
 
 const campo = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 focus:outline-none';
@@ -72,8 +79,14 @@ const campo = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm foc
 
 <template>
     <div>
-        <h1 class="text-2xl font-semibold tracking-tight text-petroleo">Auditoria</h1>
-        <p class="text-sm text-slate-500">Quem alterou o quê, quando e de onde. Somente leitura; senhas nunca são registradas.</p>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-semibold tracking-tight text-petroleo">Auditoria</h1>
+                <p class="text-sm text-slate-500">Quem alterou o quê, quando e de onde. Somente leitura; senhas nunca são registradas.</p>
+            </div>
+            <!-- A planilha traz exatamente o que os filtros mostram na tela. -->
+            <BotaoExportar rotulo="Exportar" :opcoes="opcoesExportar" @erro="erro = $event" />
+        </div>
 
         <form class="mt-4 flex flex-wrap items-end gap-3" @submit.prevent="filtrar">
             <div>
