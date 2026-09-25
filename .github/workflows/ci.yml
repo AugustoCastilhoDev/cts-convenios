@@ -74,6 +74,10 @@ jobs:
       # O Tailwind lê o vendor do Laravel para achar classes (paginação).
       - run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
       - run: npm ci
+
+      - name: Testes do front-end (Vitest)
+        run: npm test
+
       - run: npm run build
 
   imagens:

@@ -4,12 +4,12 @@ export function formatarMoeda(valor) {
     return moeda.format(valor ?? 0);
 }
 
-/** Recebe 'YYYY-MM-DD' e devolve 'DD/MM/YYYY' sem passar por Date (evita deslocar o dia por fuso). */
 /** Data e hora locais de um instante ISO (aceite, recebimento). */
 export function formatarDataHora(iso) {
     return iso ? new Date(iso).toLocaleString('pt-BR') : '—';
 }
 
+/** Recebe 'YYYY-MM-DD' e devolve 'DD/MM/YYYY' sem passar por Date (evita deslocar o dia por fuso). */
 export function formatarData(data) {
     if (!data) {
         return '—';
