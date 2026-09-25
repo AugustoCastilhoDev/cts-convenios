@@ -49,11 +49,11 @@ jobs:
 
       - name: Testes
         run: |
-          php artisan test --no-interaction --no-ansi 2>&1 | tee ../testes.log
+          php artisan test 2>&1 | tee ../testes.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             # O log completo só abre com login no GitHub; a annotation aparece até no e-mail de falha.
-            resumo=$(grep -v -E '^\s*\.*\s*$' ../testes.log | tail -60 | head -c 6000 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            resumo=$(grep -v -E '^\s*\.*\s*$' ../testes.log | tail -60 | head -c 6000 | sed 's/[[0-9;]*m//g' | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
             echo "::error title=Testes falharam::${resumo}"
           fi
           exit "$status"
