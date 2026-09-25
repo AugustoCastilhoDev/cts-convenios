@@ -47,6 +47,6 @@ class AppServiceProvider extends ServiceProvider
             ->by($request->user()?->id ?: $request->ip()));
 
         // Formulário público da landing page: poucos envios por hora por IP.
-        RateLimiter::for('contato', fn (Request $request) => Limit::perHour(5)->by($request->ip()));
+        RateLimiter::for('contato', fn (Request $request) => Limit::perHour(config('contato.limite_por_hora'))->by($request->ip()));
     }
 }

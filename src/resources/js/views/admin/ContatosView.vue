@@ -14,18 +14,29 @@ const erro = ref('');
 const pagina = ref(1);
 const ocupado = ref(null); // id do pedido com uma ação em andamento
 
+// Se a pessoa filtra de novo antes da resposta chegar, só vale a resposta da última consulta.
+let consultaAtual = 0;
+
 async function carregar() {
+    const numero = ++consultaAtual;
     carregando.value = true;
     erro.value = '';
 
     try {
         const resposta = await api.get('/contatos', { ...filtros, busca: filtros.busca.trim(), page: pagina.value });
-        pedidos.value = resposta.data;
-        meta.value = resposta.meta;
+
+        if (numero === consultaAtual) {
+            pedidos.value = resposta.data;
+            meta.value = resposta.meta;
+        }
     } catch (e) {
-        erro.value = e.message;
+        if (numero === consultaAtual) {
+            erro.value = e.message;
+        }
     } finally {
-        carregando.value = false;
+        if (numero === consultaAtual) {
+            carregando.value = false;
+        }
     }
 }
 
@@ -50,7 +61,12 @@ async function alternarRespondido(pedido) {
 
     try {
         const resposta = await api.put(`/contatos/${pedido.id}`, { respondido: !pedido.respondido_em });
-        Object.assign(pedido, resposta.data);
+
+        // A lista pode ter sido recarregada enquanto o pedido andava: atualiza o item que está na tela agora.
+        const naTela = pedidos.value.find((p) => p.id === pedido.id);
+        if (naTela) {
+            Object.assign(naTela, resposta.data);
+        }
     } catch (e) {
         erro.value = e.message;
     } finally {

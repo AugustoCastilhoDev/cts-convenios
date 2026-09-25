@@ -97,6 +97,9 @@
 - **Landing page + formulário de contato** (2026-09-23): página pública em `/` (Blade + Tailwind, sem o pacote do Vue; a "régua de prazos" 90/60/30/15/vencido como peça central, capturas reais do sistema em `public/img`, dados fictícios). O sistema (Vue) passou a viver em `/app` (Vue Router com base `/app/`); endereços antigos (`/login`, `/convenios/...`, `/admin/...`) redirecionam. `/app` e `/api` ficam fora dos buscadores (`robots.txt` + `noindex`). As duas páginas são **sem estado** (sem sessão, sem cookie, sem CSRF: não precisam de aviso de cookies). `POST /api/contato` (público, 5/hora por IP, campo-armadilha, aceite LGPD gravado com data e IP) grava em `contatos_comerciais` e avisa `CONTATO_DESTINO` por e-mail pela fila. Não há tela para ver os pedidos: consulte a tabela ou o e-mail (candidato a próximo item do painel do admin).
 - **`php artisan demo:popular`** cria 8 convênios fictícios realistas na prefeitura de demonstração (`--limpar` remove; recusa rodar em produção). Serve para demonstrações comerciais e capturas de tela.
 - **Infraestrutura de produção** (2026-09-23): `docker/prod/Dockerfile` (multi-estágio: dependências sem pacotes de dev, assets do Vite, imagem `app` e imagem `web`), `docker-compose.prod.yml` (Caddy com HTTPS automático via `SITE_ADDRESS`, Nginx, PHP-FPM, worker da fila, agendador, Postgres e Redis com senha, sem portas expostas), `.env.production.example`, `scripts/deploy.sh` (migra na imagem nova antes de trocar os containers), `scripts/backup.sh` / `scripts/restaurar.sh`, CI no GitHub Actions (testes, Pint, build do front, build das imagens) e o manual `docs/PRODUCAO.md`. `.gitattributes` força LF nos scripts e configs Docker (CRLF do Windows quebraria o `#!/bin/sh`).
+- **Pedidos de contato no painel do admin + guarda LGPD** (2026-09-25): tela "Pedidos de contato" (Administração) com lista paginada, busca (nome/município/e-mail), situação (pendente/respondido), período, exportação CSV (neutraliza fórmulas do Excel), "marcar como respondido/reabrir" e exclusão definitiva; API `/api/contatos` só para o Administrador Interno (`ContatoComercialPolicy`), coluna `respondido_em`. O comando `contatos:limpar` (agendado às 03:00) apaga pedidos além de `CONTATO_RETENCAO_MESES` (padrão 12; 0 desliga) e a Política de Privacidade cita esse prazo automaticamente. O envio público tem limite configurável `CONTATO_LIMITE_POR_HORA` (padrão 5; só o ambiente de testes de ponta a ponta afrouxa).
+- **Testes do front-end (Vitest)** (2026-09-25): `npm test` em `src/` (90 testes: utilitários e régua de prazos, cliente da API, stores `auth`/`notificacoes`, componentes `SeloAdimplencia`, `Paginacao`, `ModalBase`, `Campo`, `CobrancaSimuladaModal`). Config separada em `vitest.config.js`; roda no job do front-end do CI.
+- **Testes de ponta a ponta (Playwright)** (2026-09-25): `npm run test:e2e` em `src/` (16 testes em `src/e2e`: login e papéis, cadastro/mover/contratar convênio, painel por secretaria, formulário da landing até o painel do admin). Usa o Chrome instalado e as contas do `DatabaseSeeder`; cria dados com prefixo `E2E` e apaga tudo no início e no fim. **Nunca aponte para produção.** Job `e2e` no CI (SQLite descartável + `artisan serve`), ensaiado localmente no mesmo cenário. Já pegou um erro real de tela (item atualizado depois de a lista recarregar).
 - O Node roda **no Windows (host)**, não nos containers: `npm run build` (gera `public/build`, ignorado no git) ou `npm run dev` (Vite em :5173) dentro de `src/`.
 
 ## Painel, Kanban e marca — entregue (pedido de 2026-09-23)
@@ -136,15 +139,19 @@ Pedido do product owner, executado na ordem abaixo. Tudo entregue e verificado n
 - [ ] **Domínio do CTS (única pendência para o go-live)**: ainda não registrado. Quando existir, seguir o bloco "Quando o domínio existir" de `docs/PRODUCAO.md`: DNS `A`, `SITE_ADDRESS`/`APP_URL`/`ACME_EMAIL`, verificar o domínio no Resend (SPF/DKIM/DMARC), trocar `MAIL_FROM_ADDRESS`, deixar `ALERTAS_REDIRECIONAR_PARA` vazio e testar entrega em caixas `.gov.br`/Outlook (o 1º teste caiu em spam no Gmail: reputação de domínio novo; SPF/DKIM/DMARC estavam corretos; DMARC começa em `p=none` e sobe para `p=quarantine`). Hoje o e-mail sai por um domínio provisório (`offerjetshop.net`, de outro projeto) — só para dev.
 - [ ] **Texto jurídico — minuta pronta, falta revisão e 5 dados** (2026-09-25): páginas públicas `/privacidade` e `/termos` (sem estado, indexáveis, linkadas no rodapé da landing e no aceite do formulário), com CNPJ/razão social/endereço do cartão CNPJ (`config/empresa.php`). Aparece o aviso "Minuta em revisão" até `TEXTO_JURIDICO_REVISADO=true`. Dado ainda vazio aparece destacado "a preencher": e-mail de contato, encarregado (nome e e-mail), hospedagem, foro. Decisões que o texto deixa marcadas: prazo de guarda dos pedidos de contato (sugestão: 12 meses; **hoje nada apaga automaticamente**), SLA, valor máximo de indenização, prazo de devolução/eliminação dos dados ao fim do contrato. Contrato/SLA com as prefeituras continua por fazer, com advogado.
 
+- [ ] **Monitoramento externo com HetrixTools** (decidido em 2026-09-25; depende do domínio e do servidor): (1) monitor de uptime em `https://SEU-DOMINIO/up`; (2) monitores de *heartbeat* para o backup diário e para o scheduler (Motor de Alertas 07:00), que avisam quando o sinal **não chega** — o `/up` sozinho não pega backup ou scheduler parados; (3) agente do servidor (disco/memória/CPU; o disco cresce com os documentos). Preparo possível antes: `backup.sh` e o scheduler chamarem uma URL `HEARTBEAT_*` do `.env.production` quando definida. Confira os limites do plano gratuito no site deles antes de contar com eles.
+- [ ] **Backups para fora do servidor**: hoje o `backup.sh` grava só no próprio servidor (retenção de 14 dias), que não protege contra a perda dele. Falta escolher o destino (bucket S3/Backblaze via rclone, ou outro servidor) e estender o script; o envio real só dá para testar com o destino criado.
+
 ## Próximos passos (em ordem sugerida)
 
-O front-end do Módulo 2 (Kanban, painel, detalhe, contratos e documentos), a exportação do Fiscal e o painel do Administrador estão completos. Refinamentos possíveis depois: testes automatizados do front-end (Vitest) e ajustes visuais.
+O front-end do Módulo 2 (Kanban, painel, detalhe, contratos e documentos), a exportação do Fiscal, o painel do Administrador (inclusive os pedidos de contato) e os testes automatizados (PHP, Vitest e ponta a ponta) estão completos.
 
-O que falta para ir ao ar é só o domínio e o texto jurídico (acima). Melhorias possíveis depois, sem ordem fixa:
+O que falta para ir ao ar é o domínio, o servidor e o texto jurídico (acima). Melhorias possíveis depois, sem ordem fixa:
 
-- Tela no painel do admin para ver/exportar os pedidos de contato da landing (`contatos_comerciais`).
-- Testes automatizados do front-end (Vitest) e um teste de ponta a ponta do fluxo principal.
-- Monitoramento externo do `/up` e alerta se o servidor cair (ex.: UptimeRobot) e envio dos backups para fora do servidor.
+- Cobrança real ao fiscal (campo "fiscal responsável" por convênio + endpoint + limite + auditoria), no lugar da simulação atual.
+- Justificativa e registro de prorrogação de prazo, com auditoria.
+- Tornar `secretaria` obrigatória na API quando todos os convênios existentes estiverem classificados; filtro por secretaria também no Kanban.
+- Mais testes de componentes do front-end (formulários, Kanban) e um teste de ponta a ponta do sino de alertas.
 - WhatsApp como terceiro canal de alerta, quando houver gateway contratado.
 
 ## Armadilhas conhecidas (para não repetir)
@@ -180,8 +187,13 @@ docker compose exec app-server php artisan db:seed --force
 npm install
 npm run build   # ou: npm run dev  (hot reload em http://localhost:5173, app em http://localhost:8000)
 
-# Rodar a suíte de testes
+# Rodar a suíte de testes (PHP)
 docker compose exec app-server php artisan test
+
+# Testes do front-end e de ponta a ponta (no Windows, dentro de src/)
+npm test                # Vitest (rápido, sem servidor)
+npm run test:e2e        # Playwright: precisa do sistema no ar em http://localhost:8000 e do Chrome instalado
+                        # (pede CONTATO_LIMITE_POR_HORA alto no src/.env: o formulário da landing é enviado a cada rodada)
 
 # Corrigir permissões depois de instalar algo via composer:2
 docker compose exec -u root app-server chown -R appuser:appuser /var/www/html

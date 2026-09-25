@@ -6,9 +6,11 @@
         "build": "vite build",
         "dev": "vite",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "test:e2e": "playwright test"
     },
     "devDependencies": {
+        "@playwright/test": "^1.63.0",
         "@tailwindcss/vite": "^4.0.0",
         "@vitejs/plugin-vue": "^6.0.9",
         "@vue/test-utils": "^2.5.1",

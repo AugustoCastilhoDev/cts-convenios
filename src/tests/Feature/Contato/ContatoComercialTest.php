@@ -79,6 +79,9 @@ class ContatoComercialTest extends TestCase
 
     public function test_limita_a_cinco_pedidos_por_hora_por_ip(): void
     {
+        // O padrão de produção. Fixado aqui porque o .env de desenvolvimento afrouxa o limite para os testes de ponta a ponta.
+        config(['contato.limite_por_hora' => 5]);
+
         for ($i = 0; $i < 5; $i++) {
             $this->postJson('/api/contato', $this->payload())->assertCreated();
         }

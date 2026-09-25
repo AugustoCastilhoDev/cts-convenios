@@ -80,6 +80,72 @@ jobs:
 
       - run: npm run build
 
+  e2e:
+    name: Ponta a ponta (Playwright)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    # Sem Redis nem Docker: SQLite descartável, fila síncrona e o servidor embutido do PHP.
+    env:
+      APP_ENV: local
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ${{ github.workspace }}/src/database/e2e.sqlite
+      CACHE_STORE: database
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      MAIL_MAILER: log
+      CONTATO_LIMITE_POR_HORA: 1000
+      PHP_CLI_SERVER_WORKERS: 4
+      E2E_BASE_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, intl, bcmath, zip, exif, pdo_sqlite, sqlite3
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/package-lock.json
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci
+      - run: npm run build
+
+      - name: Preparar o sistema e o banco de teste
+        run: |
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+          touch database/e2e.sqlite
+          php artisan migrate --force --no-interaction
+          php artisan db:seed --force --no-interaction
+
+      - name: Subir o servidor
+        run: |
+          nohup php artisan serve --host=127.0.0.1 --port=8000 > ../servidor-e2e.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8000/up > /dev/null && exit 0; sleep 1; done
+          echo "O servidor não subiu:"; cat ../servidor-e2e.log; exit 1
+
+      # O Chrome já vem instalado no runner do GitHub (channel: chrome).
+      - name: Testes de ponta a ponta
+        run: npx playwright test
+
+      - name: Guardar relatório e log do servidor (só se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-falha
+          path: |
+            src/playwright-report
+            src/test-results
+            servidor-e2e.log
+          retention-days: 7
+
   imagens:
     name: Imagens de produção
     runs-on: ubuntu-latest

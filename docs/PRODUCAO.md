@@ -194,3 +194,13 @@ Este é o único bloco que fica **pendente** hoje. Em ordem:
   contrato acabar.
 - **Rodapé da landing**: já mostra razão social e CNPJ. Falta um e-mail de contato oficial (`EMPRESA_EMAIL_CONTATO`).
 - **Páginas `/privacidade` e `/termos`**: minuta pronta. Preencha no `.env.production` `EMPRESA_EMAIL_CONTATO`, `EMPRESA_ENCARREGADO_NOME`, `EMPRESA_ENCARREGADO_EMAIL`, `EMPRESA_HOSPEDAGEM` e `EMPRESA_FORO`. Depois da revisão jurídica, `TEXTO_JURIDICO_REVISADO=true` remove o aviso de minuta.
+
+## Rotinas automáticas do scheduler
+
+| Quando | Comando | O que faz |
+|---|---|---|
+| Todo dia, 07:00 (Brasília) | `alertas:processar` | Motor de Alertas: gera e envia os alertas de prazo (90/60/30/15 dias e vencidos). |
+| Todo dia, 03:00 | `contatos:limpar` | Apaga pedidos de contato da landing além do prazo de guarda (`CONTATO_RETENCAO_MESES`, padrão 12). É o prazo citado na Política de Privacidade: se mudar um, mude o outro (o texto usa o valor configurado). |
+| Todo dia | `sanctum:prune-expired` | Limpa tokens de login vencidos. |
+
+Os pedidos de contato ficam na tela **Administração > Pedidos de contato** (só o administrador da plataforma).

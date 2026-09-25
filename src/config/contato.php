@@ -16,6 +16,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Limite de envios do formulário público
+    |--------------------------------------------------------------------------
+    |
+    | Pedidos por hora por endereço IP (toda tentativa conta, até as recusadas).
+    | Em produção deixe o padrão; só os testes de ponta a ponta precisam de mais.
+    |
+    */
+
+    'limite_por_hora' => (int) env('CONTATO_LIMITE_POR_HORA', 5),
+
+    /*
+    |--------------------------------------------------------------------------
     | Prazo de guarda dos pedidos de contato
     |--------------------------------------------------------------------------
     |
