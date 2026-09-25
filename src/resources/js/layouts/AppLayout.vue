@@ -50,6 +50,7 @@ const principal = [
 const administracao = [
     { rota: 'admin-prefeituras', rotulo: 'Prefeituras', icone: 'prefeituras', prefixo: '/admin/prefeituras' },
     { rota: 'admin-usuarios', rotulo: 'Usuários', icone: 'usuarios', prefixo: '/admin/usuarios' },
+    { rota: 'admin-contatos', rotulo: 'Pedidos de contato', icone: 'envelope', prefixo: '/admin/contatos' },
     { rota: 'admin-auditoria', rotulo: 'Auditoria', icone: 'auditoria', prefixo: '/admin/auditoria' },
 ];
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ContratoVinculadoController;
 use App\Http\Controllers\Api\ConvenioController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\NotificacaoController;
+use App\Http\Controllers\Api\PedidoContatoController;
 use App\Http\Controllers\Api\RelatorioConvenioController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\UserController;
@@ -34,6 +35,12 @@ Route::middleware(['auth:sanctum', 'conta.ativa'])->group(function () {
     Route::get('/notificacoes', [NotificacaoController::class, 'index']);
     Route::post('/notificacoes/lidas', [NotificacaoController::class, 'marcarTodasLidas']);
     Route::post('/notificacoes/{alerta}/lida', [NotificacaoController::class, 'marcarLida']);
+
+    // Pedidos de demonstração da landing page (só Administrador Interno). "exportar" antes de "{contato}".
+    Route::get('/contatos', [PedidoContatoController::class, 'index']);
+    Route::get('/contatos/exportar', [PedidoContatoController::class, 'exportar']);
+    Route::put('/contatos/{contato}', [PedidoContatoController::class, 'update']);
+    Route::delete('/contatos/{contato}', [PedidoContatoController::class, 'destroy']);
 
     Route::get('/tenants', [TenantController::class, 'index']);
     Route::post('/tenants', [TenantController::class, 'store']);

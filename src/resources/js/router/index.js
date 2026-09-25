@@ -36,6 +36,12 @@ const routes = [
                 meta: { requiresAdmin: true },
             },
             {
+                path: 'admin/contatos',
+                name: 'admin-contatos',
+                component: () => import('../views/admin/ContatosView.vue'),
+                meta: { requiresAdmin: true },
+            },
+            {
                 path: 'admin/auditoria',
                 name: 'admin-auditoria',
                 component: () => import('../views/admin/AuditoriaView.vue'),

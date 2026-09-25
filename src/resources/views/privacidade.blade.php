@@ -53,7 +53,7 @@
     <h2>6. Por quanto tempo guardamos</h2>
     <ul>
         <li><strong>Pedidos de contato:</strong> pelo tempo necessário para retornar o contato e, se não houver contratação, por até
-            <x-pendente>12 meses — prazo a confirmar</x-pendente>.</li>
+            {{ config('contato.retencao_meses') }} {{ config('contato.retencao_meses') === 1 ? 'mês' : 'meses' }}, quando são apagados automaticamente.</li>
         <li><strong>Dados do sistema:</strong> enquanto o contrato com a prefeitura estiver ativo. Ao final, devolvemos ou eliminamos os dados conforme o contrato
             (<x-pendente>prazo a definir no contrato</x-pendente>), ressalvadas obrigações legais.</li>
         <li><strong>Cópias de segurança:</strong> mantidas por 14 dias em rodízio; dados eliminados do sistema desaparecem dos backups nesse prazo.</li>

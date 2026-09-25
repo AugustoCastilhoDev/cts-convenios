@@ -5,6 +5,11 @@ export function formatarMoeda(valor) {
 }
 
 /** Recebe 'YYYY-MM-DD' e devolve 'DD/MM/YYYY' sem passar por Date (evita deslocar o dia por fuso). */
+/** Data e hora locais de um instante ISO (aceite, recebimento). */
+export function formatarDataHora(iso) {
+    return iso ? new Date(iso).toLocaleString('pt-BR') : '—';
+}
+
 export function formatarData(data) {
     if (!data) {
         return '—';
