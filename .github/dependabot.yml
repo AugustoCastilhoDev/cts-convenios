@@ -28,14 +28,29 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # As actions mudam de major com frequência (ex.: checkout 4→7) mas o risco é baixo;
+    # um PR só junta todas, em vez de uma por dependência (2026-09-28: chegaram 5 de uma vez).
+    groups:
+      actions:
+        patterns:
+          - "*"
 
   # Imagens-base do Docker (PHP, Nginx...): também recebem correções de segurança.
   - package-ecosystem: docker
     directory: /docker/prod
     schedule:
       interval: monthly
+    ignore:
+      # Node 25 não é LTS (o CI e o build usam a 22); ver ROADMAP.md antes de aceitar um major.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: docker-compose
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # Major do Postgres muda o formato do diretório de dados (exige dump/restauração
+      # planejada, não um simples bump de imagem); ver ROADMAP.md antes de aceitar.
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
