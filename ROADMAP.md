@@ -162,6 +162,21 @@ O que falta para ir ao ar é o domínio, o servidor e o texto jurídico (acima).
 - Mais testes de componentes do front-end (formulários, Kanban) e um teste de ponta a ponta do sino de alertas.
 - WhatsApp como terceiro canal de alerta, quando houver gateway contratado.
 
+## Fase 2 — Integração com APIs públicas do governo (futuro, 2026-09-28)
+
+Visão de longo prazo (não é próximo passo do MVP): eliminar parte do cadastro manual e cruzar os dados do CTS com fontes oficiais. Registrado aqui para orientar decisões de arquitetura **a partir de agora** — não é para começar a implementar já.
+
+- **Transferegov.br (Dados Abertos)** — consulta por CNPJ do município (já temos `tenants.cnpj`) para puxar convênios/termos de compromisso e, principalmente, as datas oficiais de vigência e prestação de contas; e rastreamento de "Emendas Pix" (transferências especiais) para os cards de saldo.
+- **PNCP** (Lei 14.133/21) — puxar dados de licitações/contratos e empresa contratada, vinculando automaticamente ao convênio.
+- **Obrasgov.br** (ex-CIPI) — medição física de obras, cruzada com a execução financeira do contrato.
+- **TCU (CEIS/CNEP)** — checar idoneidade do fornecedor por CNPJ ao vincular um contrato, com alerta visual.
+
+**Diretriz de arquitetura (vale desde já):**
+- Futuras integrações ficam isoladas em `App\Services\GovApi`, atrás de uma interface (`Gateway` ou similar) — nunca chamadas HTTP direto de Controller/Model. Rodam em Jobs na fila (`cache-workers`/Redis já existe) para não travar a requisição nem depender da disponibilidade da API do governo.
+- **O cadastro manual precisa continuar sendo sempre o caminho principal e nunca pode virar dependente de uma API externa estar no ar.** Qualquer automação futura é um *preenchimento*, não uma *substituição* — se a API cair, o usuário sempre consegue cadastrar/editar na mão como hoje.
+- **Lacuna real já identificada**: `contratos_vinculados.empresa_contratada` (migration `2026_09_22_100200_create_contratos_vinculados_table.php`) é hoje uma `string` livre, sem CNPJ — PNCP e TCU exigem consulta por CNPJ da empresa. Quando a Fase 2 chegar, precisa de uma coluna `cnpj_contratada` (nullable, para não quebrar contratos já cadastrados). Não adicionar agora, só ter em mente ao mexer nessa tabela.
+- `ConvenioService`/`ContratoVinculadoService` (`app/Services/`) são hoje CRUD simples e sem acoplamento a "de onde vem o dado" — está OK deixar assim. Ao refatorá-los, evitar qualquer suposição de que o dado só chega por formulário (ex.: validações e Policies continuam sendo a fronteira de autorização, não algo que uma sincronização automática possa pular).
+
 ## Armadilhas conhecidas (para não repetir)
 
 - **Testes com token no mesmo processo**: depois de um login (`Auth::once`) o Sanctum trata a chamada seguinte como sessão (token transitório), e depois de uma chamada por token o guard padrão vira `sanctum` e quebra o login seguinte. Em teste, chame `$this->app['auth']->forgetGuards()` (e `shouldUse('web')` antes de um login) entre elas. Em produção cada requisição é um processo novo, então não ocorre.
