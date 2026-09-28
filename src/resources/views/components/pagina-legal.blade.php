@@ -1,4 +1,4 @@
-@props(['titulo', 'descricao', 'caminho'])
+@props(['titulo', 'descricao', 'caminho', 'ultimaAtualizacao'])
 <!DOCTYPE html>
 <html lang="pt-BR" class="scroll-smooth motion-reduce:scroll-auto">
 <head>
@@ -27,7 +27,7 @@
         @endunless
 
         <h1 class="text-3xl font-semibold tracking-tight text-balance text-petroleo sm:text-4xl">{{ $titulo }}</h1>
-        <p class="mt-2 text-sm text-slate-500">Última atualização: 25 de setembro de 2026</p>
+        <p class="mt-2 text-sm text-slate-500">Última atualização: {{ $ultimaAtualizacao }}</p>
 
         <div class="mt-8 leading-7 text-slate-700 [&_a]:text-brand-700 [&_a]:underline [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-petroleo [&_li]:mt-2 [&_ol]:mt-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-3 [&_strong]:text-slate-900 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-6">
             {{ $slot }}

@@ -2,6 +2,7 @@
     titulo="Política de Privacidade"
     descricao="Como o CTS Convênios trata dados pessoais: o que coletamos, para quê, com quem compartilhamos e como exercer seus direitos (LGPD)."
     caminho="/privacidade"
+    ultima-atualizacao="28 de setembro de 2026"
 >
     <p>
         Esta política explica como a <strong>{{ config('empresa.razao_social') }}</strong> (CNPJ <x-dado-empresa campo="cnpj" />),
@@ -19,8 +20,8 @@
     <h2>2. Que dados tratamos</h2>
     <p><strong>Quem preenche o formulário da página inicial:</strong> nome, cargo (opcional), município, e-mail, telefone (opcional),
         mensagem (opcional), endereço IP e o momento em que você aceitou o uso dos dados.</p>
-    <p><strong>Quem usa o sistema (servidores e gestores da prefeitura):</strong> nome, e-mail, papel de acesso, senha (guardada de forma
-        irreversível, nunca em texto aberto) e o registro das ações feitas no sistema.</p>
+    <p><strong>Quem usa o sistema (servidores e gestores da prefeitura):</strong> nome, e-mail, papel de acesso, senha (guardada com algoritmos
+        de hash seguros, nunca em texto aberto) e o registro das ações feitas no sistema.</p>
     <p><strong>O que a prefeitura cadastra:</strong> convênios, prazos, valores, contratos vinculados (número, empresa contratada e valor) e
         documentos enviados em arquivo. São, em geral, informações da administração pública, mas os documentos podem conter dados pessoais
         (por exemplo, nomes de servidores ou responsáveis). Não pedimos nem esperamos dados sensíveis.</p>
@@ -37,14 +38,19 @@
     </ul>
     <p>Não vendemos dados pessoais e não usamos os dados do sistema para publicidade nem para criar perfis de comportamento.</p>
 
-    <h2>4. Com quem compartilhamos</h2>
+    <h2>4. Com quem compartilhamos e transferência internacional de dados</h2>
+    <p>Para viabilizar o serviço com alta disponibilidade e desempenho, usamos fornecedores de infraestrutura globais. Os dados e a base do sistema
+        são armazenados e processados em servidores <strong>fora do território nacional</strong> (América do Norte e/ou Europa); todos os parceiros
+        abaixo seguem o art. 33 da LGPD, com cláusulas contratuais de segurança da informação.</p>
     <ul>
-        <li><strong>Hospedagem:</strong> <x-dado-empresa campo="hospedagem" />, onde o sistema e o banco de dados ficam.</li>
-        <li><strong>Envio de e-mails:</strong> o Resend (Resend, Inc.) entrega os alertas e os avisos do sistema. Ele recebe o endereço de e-mail e o texto da mensagem.</li>
-        <li><strong>Backup em nuvem:</strong> Cloudflare R2 (Cloudflare, Inc.), onde as cópias de segurança diárias ficam armazenadas criptografadas (AES-256).</li>
-        <li><strong>Autoridades:</strong> apenas quando a lei ou uma ordem judicial exigir.</li>
+        <li><strong>Hospedagem e banco de dados:</strong> <x-dado-empresa campo="hospedagem" />, onde a aplicação e o banco de dados PostgreSQL
+            ficam num servidor virtual privado (VPS) fora do Brasil.</li>
+        <li><strong>Envio de e-mails:</strong> Resend (Resend, Inc.), que entrega os alertas e avisos do sistema. Recebe só o e-mail do destinatário
+            e o texto do alerta.</li>
+        <li><strong>Backup em nuvem:</strong> Cloudflare R2 (Cloudflare, Inc.), onde as cópias de segurança diárias ficam armazenadas de forma
+            redundante, também fora do Brasil.</li>
+        <li><strong>Autoridades:</strong> apenas quando a lei brasileira ou uma ordem judicial exigir.</li>
     </ul>
-    <p>Alguns desses prestadores podem processar dados fora do Brasil. Quando isso ocorrer, exigimos garantias compatíveis com a LGPD (art. 33).</p>
 
     <h2>5. Cookies e armazenamento no navegador</h2>
     <p>A página inicial <strong>não usa cookies</strong>, ferramentas de análise nem rastreadores de terceiros. O sistema guarda no seu navegador o
@@ -61,18 +67,21 @@
         <li><strong>Trilha de auditoria:</strong> mantida enquanto durar o contrato, pois é o histórico que protege a prefeitura.</li>
     </ul>
 
-    <h2>7. Como protegemos</h2>
+    <h2>7. Como protegemos e a transferência segura</h2>
     <ul>
-        <li>Cada prefeitura só enxerga os próprios dados; o isolamento é aplicado em todas as consultas.</li>
-        <li>Conexão criptografada (HTTPS), senhas guardadas de forma irreversível, limite de tentativas de login e sessão que expira em 12 horas.</li>
+        <li>Cada prefeitura só enxerga os próprios dados; o isolamento (multi-tenant) é verificado em camadas redundantes no back-end,
+            independente de onde o servidor está.</li>
+        <li>Conexão sempre criptografada (HTTPS/TLS) entre o seu navegador e o servidor, mesmo estando fora do Brasil; senhas guardadas com
+            hash seguro, limite de tentativas de login e sessão que expira em 12 horas.</li>
+        <li>As cópias de segurança diárias são criptografadas (AES-256) <strong>antes</strong> de saírem do servidor rumo ao armazenamento em nuvem.</li>
         <li>Documentos só são baixados por quem tem acesso ao convênio, nunca por link aberto.</li>
-        <li>Trilha de auditoria de criações, alterações e exclusões, e cópias de segurança periódicas.</li>
+        <li>Trilha de auditoria de criações, alterações e exclusões (logs imutáveis), e monitoramento contra tentativas de acesso indevido.</li>
     </ul>
     <p>Nenhum sistema é totalmente imune a incidentes. Se ocorrer um que possa causar risco relevante, avisaremos a prefeitura afetada e a ANPD nos prazos da lei.</p>
 
     <h2>8. Seus direitos</h2>
     <p>Você pode pedir: confirmação de que tratamos seus dados, acesso, correção, anonimização ou eliminação de dados desnecessários, portabilidade,
-        informação sobre com quem compartilhamos e a revogação do consentimento (LGPD, art. 18).</p>
+        informação detalhada sobre com quem compartilhamos (inclusive as transferências internacionais acima) e a revogação do consentimento (LGPD, art. 18).</p>
     <p>Para dados do formulário do site, escreva para o e-mail do encarregado abaixo. Para dados cadastrados no sistema, o pedido deve ser feito à
         <strong>prefeitura</strong> (a controladora); nós ajudamos a prefeitura a atendê-lo.</p>
 

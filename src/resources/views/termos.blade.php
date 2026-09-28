@@ -2,6 +2,7 @@
     titulo="Termos de Uso"
     descricao="Regras de uso do CTS Convênios: o que o serviço faz, responsabilidades da prefeitura e da Castilho Soluções Digitais, disponibilidade e alertas."
     caminho="/termos"
+    ultima-atualizacao="25 de setembro de 2026"
 >
     <p>
         Estes termos valem para o uso do CTS Convênios, serviço da <strong>{{ config('empresa.razao_social') }}</strong>
