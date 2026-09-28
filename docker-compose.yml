@@ -125,7 +125,7 @@ services:
   # cache-workers: Redis — cache de dados + filas assíncronas (alertas)
   # ------------------------------------------------------------------------
   cache-workers:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: cts_cache_workers
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
