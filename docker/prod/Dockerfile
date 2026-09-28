@@ -96,7 +96,7 @@ CMD ["php-fpm"]
 # --------------------------------------------------------------------------
 # web: Nginx só com os arquivos públicos; o PHP fica no serviço "app".
 # --------------------------------------------------------------------------
-FROM nginx:1.27-alpine AS web
+FROM nginx:1.29-alpine AS web
 
 COPY docker/prod/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=app /var/www/html/public /var/www/html/public
