@@ -18,7 +18,9 @@
         <li>O acesso é criado pela equipe da plataforma ou pelo administrador da prefeitura. Cada conta é <strong>pessoal e intransferível</strong>.</li>
         <li>Quem usa a conta é responsável por manter a senha em sigilo e por avisar imediatamente se suspeitar de uso indevido.</li>
         <li>A prefeitura deve desativar as contas de quem deixar a equipe. Podemos suspender contas que ameacem a segurança do sistema.</li>
-        <li>Conforme o papel de cada pessoa, o sistema permite consultar, cadastrar e editar. A exclusão de registros é feita pela equipe da plataforma e fica na trilha de auditoria.</li>
+        <li>Conforme o papel de cada pessoa — super administrador, administrador da prefeitura, gestor de convênios ou fiscal de controle interno — o sistema permite consultar,
+            cadastrar e editar. A exclusão definitiva de registros é feita só pela equipe da plataforma, mediante pedido formal, e fica registrada na trilha de auditoria.
+            A autenticação em duas etapas (2FA) é obrigatória para administradores.</li>
     </ul>
 
     <h2>3. Responsabilidades da prefeitura</h2>
@@ -38,23 +40,23 @@
         sistema. Recomendamos que a prefeitura mantenha um responsável que acompanhe o painel.</p>
 
     <h2>5. Disponibilidade e suporte</h2>
-    <p>Trabalhamos para manter o sistema disponível todos os dias, com cópias de segurança periódicas. Manutenções programadas serão avisadas com antecedência quando possível.
-        Metas de disponibilidade, prazos de atendimento e canais de suporte são definidos no contrato:
-        <x-pendente>níveis de serviço (SLA) a definir</x-pendente>.</p>
+    <p>Trabalhamos para manter uma meta de disponibilidade de <strong>99,5% ao ano</strong>, com cópias de segurança diárias automatizadas. Manutenções programadas que exijam
+        interrupção são avisadas com pelo menos 24 horas de antecedência. O suporte técnico para dúvidas, correções e parametrizações é prestado de segunda a sexta-feira, em horário
+        comercial, pelos canais definidos no contrato administrativo assinado com a prefeitura.</p>
 
     <h2>6. Propriedade e dados</h2>
     <ul>
         <li>O sistema, sua marca e seu código pertencem à {{ config('empresa.razao_social') }}. A contratação dá à prefeitura um direito de uso, não a propriedade.</li>
         <li>Os dados e documentos cadastrados <strong>continuam sendo da prefeitura</strong>. Usamos esses dados só para prestar o serviço.</li>
-        <li>A prefeitura pode extrair seus dados a qualquer momento pelos relatórios do sistema. Ao fim do contrato, os dados são devolvidos e depois eliminados conforme o contrato
-            (<x-pendente>prazo a definir</x-pendente>).</li>
+        <li>A prefeitura pode extrair seus dados a qualquer momento pelos relatórios do sistema (CSV/PDF). Ao fim regular do contrato, os dados transacionais ativos são eliminados
+            da nossa base em até <strong>30 dias</strong>, ressalvada a trilha de auditoria necessária para comprovar a conformidade da prestação do serviço.</li>
     </ul>
 
     <h2>7. Limites de responsabilidade</h2>
-    <p>Respondemos pelo serviço nos termos do contrato e da lei. Não respondemos por decisões tomadas com base em dados cadastrados de forma incorreta ou incompleta,
-        por atrasos causados por falhas de terceiros fora do nosso controle (internet, provedores de e-mail) nem por prejuízos indiretos, como perda de repasse decorrente de prazo
-        que a prefeitura deixou de acompanhar. Esse limite não afasta responsabilidades que a lei não permite limitar.
-        <x-pendente>Valor máximo de indenização: definir com o advogado no contrato</x-pendente>.</p>
+    <p>Respondemos pelo serviço nos termos do contrato e da lei. Não respondemos por decisões tomadas com base em dados cadastrados de forma incorreta, omissa ou incompleta pela
+        prefeitura, nem por prejuízos indiretos — perda de repasses, cancelamento de emendas, rejeição de prestação de contas pelo TCE ou bloqueio no CADIN — decorrentes de a
+        prefeitura não ter agido a tempo, mesmo após receber os alertas automáticos. Esse limite não afasta responsabilidades que a lei não permite limitar. Nos termos permitidos pela
+        legislação, o valor máximo de eventual indenização fica limitado ao total das mensalidades pagas pela prefeitura nos últimos <strong>6 meses</strong> de contrato.</p>
 
     <h2>8. Cancelamento</h2>
     <p>A prefeitura pode encerrar o contrato conforme nele previsto. Podemos suspender ou encerrar o acesso em caso de descumprimento grave destes termos, com aviso prévio sempre que possível.</p>

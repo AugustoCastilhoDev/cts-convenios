@@ -41,6 +41,7 @@
     <ul>
         <li><strong>Hospedagem:</strong> <x-dado-empresa campo="hospedagem" />, onde o sistema e o banco de dados ficam.</li>
         <li><strong>Envio de e-mails:</strong> o Resend (Resend, Inc.) entrega os alertas e os avisos do sistema. Ele recebe o endereço de e-mail e o texto da mensagem.</li>
+        <li><strong>Backup em nuvem:</strong> Cloudflare R2 (Cloudflare, Inc.), onde as cópias de segurança diárias ficam armazenadas criptografadas (AES-256).</li>
         <li><strong>Autoridades:</strong> apenas quando a lei ou uma ordem judicial exigir.</li>
     </ul>
     <p>Alguns desses prestadores podem processar dados fora do Brasil. Quando isso ocorrer, exigimos garantias compatíveis com a LGPD (art. 33).</p>
