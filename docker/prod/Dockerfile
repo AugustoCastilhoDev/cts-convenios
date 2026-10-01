@@ -15,7 +15,7 @@
 # base: PHP 8.4-FPM com as extensões que o sistema usa (sem SQLite: só o
 # ambiente de testes precisa dele).
 # --------------------------------------------------------------------------
-FROM php:8.4-fpm AS base
+FROM php:8.5-fpm AS base
 
 ARG UID=1000
 ARG GID=1000
